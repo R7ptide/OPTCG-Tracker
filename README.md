@@ -1,50 +1,40 @@
-# Welcome to your Expo app 👋
+# One Piece Vault 🏴‍☠️
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A local, offline-first native mobile application built to faithfully track massive One Piece TCG collections. Designed to map digital tracking directly to physical storage systems.
 
-## Get started
+## Features Currently Implemented
 
-1. Install dependencies
+- **Offline-First Native Database:** Powered by Expo SQLite. All card data, quantities, and collection stats are stored directly on the device's physical hardware. No cloud accounts or internet connections required to view your vault.
+- **Master List Synchronization:** Pulls the absolute latest card dictionary (4,500+ cards) from the community-maintained `punk-records` repository. Updates the local database schema in seconds without requiring app updates.
+- **Visual Completion Tracker:** Navigate through beautifully rendered digital binders for every official expansion (OP01–OP16, Extra Boosters, and ST01–ST30).
+- **Dynamic Bandai Image Rendering:** Automatically constructs official Bandai image URLs based on card IDs.
+- **Ghost Missing Cards:** Cards you own are rendered in full, vibrant color with their current playset quantity. Missing cards are rendered as faded "ghosts" so you know exactly what you need to complete a set.
+- **Rapid Vault Entry:** A dedicated input interface to quickly scan and type set IDs to add cards to your physical collection.
 
+## Tech Stack
+
+- **Framework:** React Native / Expo
+- **Navigation:** Expo Router (File-based routing)
+- **Local Persistence:** `expo-sqlite`
+- **Data Source:** `buhbbl/punk-records` GitHub JSON API
+
+## How to Run Locally
+
+1. Clone the repository.
+2. Install dependencies:
    ```bash
    npm install
    ```
-
-2. Start the app
-
+3. Start the Expo development server:
    ```bash
-   npx expo start
+   npx expo start -c
    ```
+4. Scan the QR code with the Expo Go app on your physical device.
 
-In the output, you'll find options to open the app in a
+On first launch, click Sync Latest Sets Data on the Home Screen to populate the SQLite dictionary.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Roadmap & Next Steps
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Advanced Filtering: Filter grids by color, cost, and card type (Leader, Character, Event).
+- Event tracker
+- Deck builder
