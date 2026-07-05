@@ -7,7 +7,6 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 
-// Generate arrays for OP01-OP16 and EB01-EB04
 const mainSets = Array.from(
   { length: 16 },
   (_, i) => `OP${String(i + 1).padStart(2, "0")}`,
@@ -16,20 +15,44 @@ const extraBoosters = Array.from(
   { length: 4 },
   (_, i) => `EB${String(i + 1).padStart(2, "0")}`,
 );
+const premiumBoosters = ["PRB01", "PRB02"];
 
 export default function CollectionMenu() {
   const navigateToSet = (setId) => router.push(`/collection/${setId}`);
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Special</Text>
-      <TouchableOpacity
-        style={styles.setCard}
-        onPress={() => router.push("/collection/starters")}
-      >
-        <Text style={styles.setText}>Starter Decks (ST)</Text>
-      </TouchableOpacity>
+      {/* 1. SPECIAL & PROMOS */}
+      <Text style={styles.header}>Special & Promos</Text>
+      <View style={styles.grid}>
+        <TouchableOpacity
+          style={styles.setCardHalf}
+          onPress={() => router.push("/collection/starters")}
+        >
+          <Text style={styles.setText}>Starter Decks (ST)</Text>
+        </TouchableOpacity>
 
+        {/* The new Promo route! */}
+        <TouchableOpacity
+          style={styles.setCardHalf}
+          onPress={() => navigateToSet("P")}
+        >
+          <Text style={styles.setText}>Promos (P)</Text>
+        </TouchableOpacity>
+
+        {/* PRBs moved to the Special section */}
+        {premiumBoosters.map((set) => (
+          <TouchableOpacity
+            key={set}
+            style={styles.setCardHalf}
+            onPress={() => navigateToSet(set)}
+          >
+            <Text style={styles.setText}>{set}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* 2. MAIN EXPANSIONS */}
       <Text style={styles.header}>Main Expansions</Text>
       <View style={styles.grid}>
         {mainSets.map((set) => (
@@ -43,6 +66,7 @@ export default function CollectionMenu() {
         ))}
       </View>
 
+      {/* 3. EXTRA BOOSTERS */}
       <Text style={styles.header}>Extra Boosters</Text>
       <View style={styles.grid}>
         {extraBoosters.map((set) => (
@@ -75,14 +99,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
     justifyContent: "space-between",
-  },
-  setCard: {
-    backgroundColor: "#1e1e1e",
-    padding: 20,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#333",
   },
   setCardHalf: {
     backgroundColor: "#1e1e1e",

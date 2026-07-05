@@ -37,7 +37,7 @@ export default function SetDetails() {
     });
 
     const masterData = db.getAllSync(
-      "SELECT id, color, image_url FROM cards WHERE set_id = ? ORDER BY id ASC",
+      "SELECT id, color, type, image_url FROM cards WHERE set_id = ? ORDER BY id ASC",
       [set_id],
     );
 
@@ -46,6 +46,7 @@ export default function SetDetails() {
       return {
         id: row.id,
         color: row.color,
+        type: row.type,
         imageUrl: `https://en.onepiece-cardgame.com/images/cardlist/card/${row.id}.png`,
         owned: ownedMap[row.id] > 0,
         quantity: ownedMap[row.id] || 0,
@@ -136,34 +137,41 @@ export default function SetDetails() {
         keyExtractor={(item) => item.id}
         numColumns={3}
         contentContainerStyle={{ paddingBottom: 40 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.cardSlot}
-            onPress={() => setSelectedCard(item)}
-          >
-            <Image
-              source={{ uri: item.imageUrl }}
-              style={[
-                styles.cardImage,
-                item.owned ? styles.imageOwned : styles.imageMissing,
-              ]}
-              resizeMode="contain"
-            />
-            {item.owned && (
-              <View style={styles.qtyBadge}>
-                {/* ⭐️ SMART COLOR CODING: Yellow if < 4 total copies, Green if >= 4 */}
-                <Text
-                  style={[
-                    styles.qtyText,
-                    { color: item.playsetTotal >= 4 ? "#4ade80" : "#eab308" },
-                  ]}
-                >
-                  x{item.quantity}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => {
+          const isLeader = item.type && item.type.toLowerCase() === "leader";
+          // A Leader is complete at 1 copy. Everything else needs 4.
+          const isComplete = isLeader
+            ? item.quantity >= 1
+            : item.playsetTotal >= 4;
+
+          return (
+            <TouchableOpacity
+              style={styles.cardSlot}
+              onPress={() => setSelectedCard(item)}
+            >
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={[
+                  styles.cardImage,
+                  item.owned ? styles.imageOwned : styles.imageMissing,
+                ]}
+                resizeMode="contain"
+              />
+              {item.owned && (
+                <View style={styles.qtyBadge}>
+                  <Text
+                    style={[
+                      styles.qtyText,
+                      { color: isComplete ? "#4ade80" : "#eab308" }, // Apply the smart logic
+                    ]}
+                  >
+                    x{item.quantity}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
           <Text style={styles.empty}>No cards owned in this set.</Text>
         }
