@@ -7,16 +7,11 @@ import {
 } from "react-native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
-const mainSets = Array.from(
-  { length: 16 },
-  (_, i) => `OP${String(i + 1).padStart(2, "0")}`,
-);
-const extraBoosters = Array.from(
-  { length: 4 },
-  (_, i) => `EB${String(i + 1).padStart(2, "0")}`,
-);
-const premiumBoosters = ["PRB01", "PRB02"];
+import {
+  MAIN_SETS,
+  EXTRA_BOOSTERS,
+  PREMIUM_BOOSTERS,
+} from "../../constants/gameData";
 
 export default function CollectionMenu() {
   const navigateToSet = (setId) => router.push(`/collection/${setId}`);
@@ -56,7 +51,7 @@ export default function CollectionMenu() {
         </TouchableOpacity>
 
         {/* PRBs moved to the Special section */}
-        {premiumBoosters.map((set) => (
+        {PREMIUM_BOOSTERS.map((set) => (
           <TouchableOpacity
             key={set}
             style={styles.setCardHalf}
@@ -70,7 +65,7 @@ export default function CollectionMenu() {
       {/* 2. MAIN EXPANSIONS */}
       <Text style={styles.header}>Main Expansions</Text>
       <View style={styles.grid}>
-        {mainSets.map((set) => (
+        {MAIN_SETS.map((set) => (
           <TouchableOpacity
             key={set}
             style={styles.setCardHalf}
@@ -84,7 +79,7 @@ export default function CollectionMenu() {
       {/* 3. EXTRA BOOSTERS */}
       <Text style={styles.header}>Extra Boosters</Text>
       <View style={styles.grid}>
-        {extraBoosters.map((set) => (
+        {EXTRA_BOOSTERS.map((set) => (
           <TouchableOpacity
             key={set}
             style={styles.setCardHalf}
