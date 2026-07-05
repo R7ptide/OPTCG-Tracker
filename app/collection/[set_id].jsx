@@ -16,19 +16,24 @@ export default function SetDetails() {
   const { set_id } = useLocalSearchParams();
   const { showMissing } = useContext(SettingsContext);
   const [cardsToDisplay, setCardsToDisplay] = useState([]);
-
-  // This state controls our popup! If it has a card, the modal opens.
   const [selectedCard, setSelectedCard] = useState(null);
+  const [setStats, setSetStats] = useState({ unique: 0, total: 0 });
 
-  // We wrap the data loading in a function so we can call it after pressing +/-
   const fetchCards = () => {
     const ownedData = db.getAllSync(
       "SELECT card_id, quantity FROM collection WHERE card_id LIKE ?",
       [`${set_id}-%`],
     );
+
     const ownedMap = {};
+    const basePlaysetMap = {}; // Tracks aggregate total of Base ID + Alt Arts
+
     ownedData.forEach((row) => {
       ownedMap[row.card_id] = row.quantity;
+
+      // Extract Base ID (e.g., "OP01-002_p1" becomes "OP01-002")
+      const baseId = row.card_id.split("_")[0];
+      basePlaysetMap[baseId] = (basePlaysetMap[baseId] || 0) + row.quantity;
     });
 
     const masterData = db.getAllSync(
@@ -36,13 +41,24 @@ export default function SetDetails() {
       [set_id],
     );
 
-    const masterList = masterData.map((row) => ({
-      id: row.id,
-      color: row.color,
-      imageUrl: `https://en.onepiece-cardgame.com/images/cardlist/card/${row.id}.png`,
-      owned: ownedMap[row.id] > 0,
-      quantity: ownedMap[row.id] || 0,
-    }));
+    const masterList = masterData.map((row) => {
+      const baseId = row.id.split("_")[0];
+      return {
+        id: row.id,
+        color: row.color,
+        imageUrl: `https://en.onepiece-cardgame.com/images/cardlist/card/${row.id}.png`,
+        owned: ownedMap[row.id] > 0,
+        quantity: ownedMap[row.id] || 0,
+        // The combined total of this card + any of its alt-arts you own!
+        playsetTotal: basePlaysetMap[baseId] || 0,
+      };
+    });
+
+    // Update Set Statistics
+    setSetStats({
+      unique: masterList.filter((c) => c.owned).length,
+      total: masterList.length,
+    });
 
     if (showMissing) setCardsToDisplay(masterList);
     else setCardsToDisplay(masterList.filter((card) => card.owned));
@@ -52,69 +68,68 @@ export default function SetDetails() {
     fetchCards();
   }, [set_id, showMissing]);
 
-  // --- DATABASE LOGIC FOR PLUS / MINUS BUTTONS ---
+  // --- DATABASE LOGIC FOR PLUS / MINUS ---
   const handleIncrement = () => {
     if (!selectedCard) return;
     const cardId = selectedCard.id;
-
-    // Check if you already own at least one
     const existing = db.getFirstSync(
       "SELECT quantity FROM collection WHERE card_id = ?",
       [cardId],
     );
 
-    if (existing) {
+    if (existing)
       db.runSync(
         "UPDATE collection SET quantity = quantity + 1 WHERE card_id = ?",
         [cardId],
       );
-    } else {
+    else
       db.runSync("INSERT INTO collection (card_id, quantity) VALUES (?, 1)", [
         cardId,
       ]);
-    }
 
-    // Instantly update the modal text and refresh the background grid
+    fetchCards();
     setSelectedCard((prev) => ({
       ...prev,
       quantity: prev.quantity + 1,
       owned: true,
     }));
-    fetchCards();
   };
 
   const handleDecrement = () => {
-    if (!selectedCard || selectedCard.quantity === 0) return; // Can't go below 0
+    if (!selectedCard || selectedCard.quantity === 0) return;
     const cardId = selectedCard.id;
-
     const existing = db.getFirstSync(
       "SELECT quantity FROM collection WHERE card_id = ?",
       [cardId],
     );
 
     if (existing) {
-      if (existing.quantity > 1) {
+      if (existing.quantity > 1)
         db.runSync(
           "UPDATE collection SET quantity = quantity - 1 WHERE card_id = ?",
           [cardId],
         );
-      } else {
-        db.runSync("DELETE FROM collection WHERE card_id = ?", [cardId]); // Remove entirely if 0
-      }
+      else db.runSync("DELETE FROM collection WHERE card_id = ?", [cardId]);
 
+      fetchCards();
       const newQty = selectedCard.quantity - 1;
       setSelectedCard((prev) => ({
         ...prev,
         quantity: newQty,
         owned: newQty > 0,
       }));
-      fetchCards();
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{set_id} Collection</Text>
+      {/* Dynamic Set Header */}
+      <View style={styles.headerBox}>
+        <Text style={styles.title}>{set_id} Collection</Text>
+        <Text style={styles.statsText}>
+          {setStats.unique} / {setStats.total} Unique Variants Collected
+        </Text>
+      </View>
 
       <FlatList
         data={cardsToDisplay}
@@ -122,7 +137,6 @@ export default function SetDetails() {
         numColumns={3}
         contentContainerStyle={{ paddingBottom: 40 }}
         renderItem={({ item }) => (
-          // 1. Wrap the card in a TouchableOpacity to trigger the modal
           <TouchableOpacity
             style={styles.cardSlot}
             onPress={() => setSelectedCard(item)}
@@ -137,7 +151,15 @@ export default function SetDetails() {
             />
             {item.owned && (
               <View style={styles.qtyBadge}>
-                <Text style={styles.qtyText}>x{item.quantity}</Text>
+                {/* ⭐️ SMART COLOR CODING: Yellow if < 4 total copies, Green if >= 4 */}
+                <Text
+                  style={[
+                    styles.qtyText,
+                    { color: item.playsetTotal >= 4 ? "#4ade80" : "#eab308" },
+                  ]}
+                >
+                  x{item.quantity}
+                </Text>
               </View>
             )}
           </TouchableOpacity>
@@ -147,25 +169,20 @@ export default function SetDetails() {
         }
       />
 
-      {/* 2. THE POPUP MODAL */}
+      {/* THE POPUP MODAL */}
       <Modal visible={!!selectedCard} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
-          {/* Invisible button behind the card so clicking the background closes the modal */}
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             onPress={() => setSelectedCard(null)}
           />
-
           {selectedCard && (
             <View style={styles.modalContent}>
-              {/* Always show the card in full, vibrant color in the modal */}
               <Image
                 source={{ uri: selectedCard.imageUrl }}
                 style={styles.modalLargeImage}
                 resizeMode="contain"
               />
-
-              {/* The + / - Controls */}
               <View style={styles.controlsContainer}>
                 <TouchableOpacity
                   style={styles.circleBtn}
@@ -173,12 +190,10 @@ export default function SetDetails() {
                 >
                   <Text style={styles.circleBtnText}>-</Text>
                 </TouchableOpacity>
-
                 <View style={styles.qtyDisplay}>
                   <Text style={styles.qtyValue}>{selectedCard.quantity}</Text>
                   <Text style={styles.qtyLabel}>Owned</Text>
                 </View>
-
                 <TouchableOpacity
                   style={styles.circleBtn}
                   onPress={handleIncrement}
@@ -196,15 +211,10 @@ export default function SetDetails() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#121212", padding: 10 },
-  title: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-  },
+  headerBox: { marginBottom: 15, alignItems: "center" },
+  title: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+  statsText: { color: "#888", fontSize: 14, marginTop: 5 },
 
-  // Grid Styling
   cardSlot: {
     flex: 1,
     margin: 5,
@@ -216,19 +226,19 @@ const styles = StyleSheet.create({
   cardImage: { width: "100%", height: "100%", borderRadius: 8 },
   imageOwned: { opacity: 1 },
   imageMissing: { opacity: 0.2 },
+
   qtyBadge: {
     position: "absolute",
     bottom: 5,
     right: 5,
-    backgroundColor: "rgba(0,0,0,0.8)",
+    backgroundColor: "rgba(0,0,0,0.85)",
     borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  qtyText: { color: "#4ade80", fontSize: 12, fontWeight: "bold" },
+  qtyText: { fontSize: 13, fontWeight: "bold" },
   empty: { color: "#888", textAlign: "center", marginTop: 50 },
 
-  // Modal Styling
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.85)",
@@ -242,7 +252,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginBottom: 30,
   },
-
   controlsContainer: {
     flexDirection: "row",
     alignItems: "center",
