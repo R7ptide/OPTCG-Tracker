@@ -17,32 +17,21 @@ export default function Home() {
     setIsSyncing(true);
     const success = await syncMasterList();
     setIsSyncing(false);
-    if (success) {
-      alert("Master List synced successfully!");
-    } else {
-      alert("Failed to sync. Check your connection.");
-    }
+    if (success) alert("Master List synced successfully!");
+    else alert("Failed to sync. Check your connection.");
   };
 
   return (
     <View style={styles.container}>
-      {/* 1. The Add Cards Screen (Where we started) */}
+      {/* 1. The Collection Tracker (Now our main button) */}
       <TouchableOpacity
         style={styles.menuButton}
-        onPress={() => router.push("/add")} // Assuming you moved the Add form here
-      >
-        <Text style={styles.buttonText}>Add Cards to Vault</Text>
-      </TouchableOpacity>
-
-      {/* 2. The Collection Tracker */}
-      <TouchableOpacity
-        style={[styles.menuButton, { marginTop: 20 }]}
         onPress={() => router.push("/collection")}
       >
-        <Text style={styles.buttonText}>My Collection Tracker</Text>
+        <Text style={styles.buttonText}>My Collection</Text>
       </TouchableOpacity>
 
-      {/* 3. Database Sync */}
+      {/* 2. Database Sync */}
       <TouchableOpacity
         style={styles.syncButton}
         onPress={handleSync}
@@ -71,7 +60,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
   },
-  buttonText: { color: "#fff", fontSize: 22, fontWeight: "bold" },
+  buttonText: { color: "#fff", fontSize: 24, fontWeight: "bold" },
   syncButton: {
     marginTop: 50,
     backgroundColor: "#333",
