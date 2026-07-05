@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, Stack } from "expo-router";
 import { useContext, useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { SettingsContext } from "../_layout";
 import db from "../../database";
 
@@ -190,7 +191,8 @@ export default function SetDetails() {
               onPress={() => setIsMenuOpen(true)}
               style={{ paddingRight: 10 }}
             >
-              <Text style={{ fontSize: 26, color: "#fff" }}>☰</Text>
+              {/* 2. Replace the '☰' text with a clean filter icon */}
+              <Ionicons name="filter" size={24} color="#fff" />
             </TouchableOpacity>
           ),
         }}

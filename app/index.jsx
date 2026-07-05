@@ -1,21 +1,12 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
-import { router, useFocusEffect } from "expo-router";
-import { useSync } from "../hooks/useSync";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { router, useFocusEffect, Stack } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback } from "react";
 import db from "../database";
 
 export default function Home() {
-  const { syncMasterList } = useSync();
-  const [isSyncing, setIsSyncing] = useState(false);
   const [stats, setStats] = useState({ unique: 0, total: 0 });
 
-  // useFocusEffect runs every time you navigate back to this screen!
   useFocusEffect(
     useCallback(() => {
       try {
@@ -32,17 +23,23 @@ export default function Home() {
     }, []),
   );
 
-  const handleSync = async () => {
-    setIsSyncing(true);
-    const success = await syncMasterList();
-    setIsSyncing(false);
-    if (success) alert("Master List synced successfully!");
-    else alert("Failed to sync. Check your connection.");
-  };
-
   return (
     <View style={styles.container}>
-      {/* Global Stats Dashboard */}
+      {/* Inject the Settings Icon into the Top Bar */}
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => router.push("/settings")}
+              style={{ paddingRight: 10 }}
+            >
+              {/* 2. Replace the Text emoji with the Icon */}
+              <Ionicons name="settings-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+
       <View style={styles.statsCard}>
         <Text style={styles.statsTitle}>Vault Overview</Text>
         <View style={styles.statsRow}>
@@ -62,18 +59,6 @@ export default function Home() {
         onPress={() => router.push("/collection")}
       >
         <Text style={styles.buttonText}>My Collection</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.syncButton}
-        onPress={handleSync}
-        disabled={isSyncing}
-      >
-        {isSyncing ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.syncText}>Sync Latest Sets Data</Text>
-        )}
       </TouchableOpacity>
     </View>
   );
@@ -117,12 +102,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: { color: "#fff", fontSize: 24, fontWeight: "bold" },
-  syncButton: {
-    marginTop: 50,
-    backgroundColor: "#333",
-    padding: 15,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  syncText: { color: "#aaa", fontSize: 16 },
 });

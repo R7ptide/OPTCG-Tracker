@@ -5,7 +5,8 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { router } from "expo-router";
+import { Stack, router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 const mainSets = Array.from(
   { length: 16 },
@@ -22,6 +23,20 @@ export default function CollectionMenu() {
 
   return (
     <ScrollView style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => router.push("/settings")}
+              style={{ paddingRight: 10 }}
+            >
+              {/* 2. Replace the Text emoji with the Icon */}
+              <Ionicons name="settings-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+
       {/* 1. SPECIAL & PROMOS */}
       <Text style={styles.header}>Special & Promos</Text>
       <View style={styles.grid}>
