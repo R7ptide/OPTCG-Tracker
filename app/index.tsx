@@ -4,18 +4,27 @@ import { useCallback, useState } from "react";
 import db from "../database";
 import { colors, radius, spacing, typography } from "../constants/theme";
 
-const readStats = () => {
+type Stats = { unique: number; total: number };
+
+const readStats = (): Stats => {
   try {
-    const unique = db.getFirstSync("SELECT COUNT(*) as count FROM collection").count;
-    const total = db.getFirstSync("SELECT SUM(quantity) as sum FROM collection").sum || 0;
-    return { unique, total };
+    const uniqueRow = db.getFirstSync<{ count: number }>(
+      "SELECT COUNT(*) as count FROM collection",
+    );
+    const totalRow = db.getFirstSync<{ sum: number | null }>(
+      "SELECT SUM(quantity) as sum FROM collection",
+    );
+    return {
+      unique: uniqueRow?.count ?? 0,
+      total: totalRow?.sum ?? 0,
+    };
   } catch {
     return { unique: 0, total: 0 };
   }
 };
 
 export default function Home() {
-  const [stats, setStats] = useState(readStats);
+  const [stats, setStats] = useState<Stats>(readStats);
 
   useFocusEffect(
     useCallback(() => {

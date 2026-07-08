@@ -2,7 +2,28 @@ import * as SQLite from "expo-sqlite";
 
 const db = SQLite.openDatabaseSync("OPTracker.db");
 
-const MIGRATIONS = [
+export type CardRow = {
+  id: string;
+  name: string | null;
+  color: string | null;
+  type: string | null;
+  cost: number | null;
+  power: number | null;
+  attribute: string | null;
+  rarity: string | null;
+  image_url: string | null;
+  set_id: string | null;
+};
+
+export type CollectionRow = {
+  card_id: string;
+  quantity: number;
+  is_staple: number;
+};
+
+type Migration = (db: SQLite.SQLiteDatabase) => void;
+
+const MIGRATIONS: Migration[] = [
   (db) => {
     db.execSync(`
       CREATE TABLE IF NOT EXISTS cards (
@@ -46,12 +67,13 @@ const MIGRATIONS = [
   // },
 ];
 
-export const initDB = () => {
-  const { user_version } = db.getFirstSync("PRAGMA user_version");
-  for (let i = user_version; i < MIGRATIONS.length; i++) {
+export const initDB = (): void => {
+  const row = db.getFirstSync<{ user_version: number }>("PRAGMA user_version");
+  const version = row?.user_version ?? 0;
+  for (let i = version; i < MIGRATIONS.length; i++) {
     db.withTransactionSync(() => MIGRATIONS[i](db));
   }
-  if (user_version < MIGRATIONS.length) {
+  if (version < MIGRATIONS.length) {
     db.execSync(`PRAGMA user_version = ${MIGRATIONS.length}`);
   }
 };

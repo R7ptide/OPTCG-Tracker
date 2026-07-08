@@ -14,7 +14,7 @@ import {
 import { colors, radius, spacing, typography } from "../../constants/theme";
 
 export default function CollectionMenu() {
-  const navigateToSet = (setId) => router.push(`/collection/${setId}`);
+  const navigateToSet = (setId: string) => router.push(`/collection/${setId}`);
 
   return (
     <ScrollView style={styles.container}>

@@ -17,7 +17,7 @@ export const colors = {
   primaryBorder: "#d8b4fe",
   accent: "#4ade80",
   warning: "#eab308",
-};
+} as const;
 
 export const spacing = {
   xs: 5,
@@ -26,14 +26,14 @@ export const spacing = {
   lg: 20,
   xl: 30,
   xxl: 40,
-};
+} as const;
 
 export const radius = {
   sm: 8,
   md: 12,
   lg: 15,
   pill: 999,
-};
+} as const;
 
 export const typography = {
   sizes: {
@@ -45,4 +45,4 @@ export const typography = {
     xxl: 24,
     display: 32,
   },
-};
+} as const;

@@ -14,25 +14,38 @@ import { useFilters } from "../../hooks/useFilters";
 import db from "../../database";
 import { RARITY_MAP } from "../../constants/gameData";
 import { colors, radius, spacing, typography } from "../../constants/theme";
-import CardModal from "../../components/CardModal";
+import CardModal, { type CollectionCard } from "../../components/CardModal";
 import FilterDrawer from "../../components/FilterDrawer";
 
+type OwnedRow = { card_id: string; quantity: number };
+type MasterRow = {
+  id: string;
+  name: string | null;
+  color: string | null;
+  type: string | null;
+  cost: number | null;
+  rarity: string | null;
+  image_url: string | null;
+};
+type ExistingRow = { quantity: number };
+
 export default function SetDetails() {
-  const { set_id } = useLocalSearchParams();
+  const params = useLocalSearchParams<{ set_id: string }>();
+  const set_id = params.set_id;
   const { showMissing, setShowMissing } = useSettings();
   const { filters, setSearchName, toggle } = useFilters();
 
   const [dbVersion, setDbVersion] = useState(0);
-  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedCard, setSelectedCard] = useState<CollectionCard | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { masterCards, setStats } = useMemo(() => {
-    const ownedData = db.getAllSync(
+    const ownedData = db.getAllSync<OwnedRow>(
       "SELECT card_id, quantity FROM collection WHERE card_id LIKE ?",
       [`${set_id}-%`],
     );
-    const ownedMap = {};
-    const basePlaysetMap = {};
+    const ownedMap: Record<string, number> = {};
+    const basePlaysetMap: Record<string, number> = {};
 
     ownedData.forEach((row) => {
       ownedMap[row.card_id] = row.quantity;
@@ -40,12 +53,12 @@ export default function SetDetails() {
       basePlaysetMap[baseId] = (basePlaysetMap[baseId] || 0) + row.quantity;
     });
 
-    const masterData = db.getAllSync(
+    const masterData = db.getAllSync<MasterRow>(
       "SELECT id, name, color, type, cost, rarity, image_url FROM cards WHERE set_id = ? ORDER BY id ASC",
       [set_id],
     );
 
-    const masterList = masterData.map((row) => {
+    const masterList: CollectionCard[] = masterData.map((row) => {
       const baseId = row.id.split("_")[0];
       return {
         id: row.id,
@@ -55,7 +68,7 @@ export default function SetDetails() {
         rarity: row.rarity || "",
         cost: row.cost,
         imageUrl: `https://en.onepiece-cardgame.com/images/cardlist/card/${row.id}.png`,
-        owned: ownedMap[row.id] > 0,
+        owned: (ownedMap[row.id] ?? 0) > 0,
         quantity: ownedMap[row.id] || 0,
         playsetTotal: basePlaysetMap[baseId] || 0,
       };
@@ -102,7 +115,7 @@ export default function SetDetails() {
   const handleIncrement = () => {
     if (!selectedCard) return;
     const cardId = selectedCard.id;
-    const existing = db.getFirstSync(
+    const existing = db.getFirstSync<ExistingRow>(
       "SELECT quantity FROM collection WHERE card_id = ?",
       [cardId],
     );
@@ -117,17 +130,17 @@ export default function SetDetails() {
       ]);
 
     setDbVersion((v) => v + 1);
-    setSelectedCard((prev) => ({
-      ...prev,
-      quantity: prev.quantity + 1,
-      owned: true,
-    }));
+    setSelectedCard((prev) =>
+      prev
+        ? { ...prev, quantity: prev.quantity + 1, owned: true }
+        : prev,
+    );
   };
 
   const handleDecrement = () => {
     if (!selectedCard || selectedCard.quantity === 0) return;
     const cardId = selectedCard.id;
-    const existing = db.getFirstSync(
+    const existing = db.getFirstSync<ExistingRow>(
       "SELECT quantity FROM collection WHERE card_id = ?",
       [cardId],
     );
@@ -140,11 +153,11 @@ export default function SetDetails() {
       else db.runSync("DELETE FROM collection WHERE card_id = ?", [cardId]);
       setDbVersion((v) => v + 1);
       const newQty = selectedCard.quantity - 1;
-      setSelectedCard((prev) => ({
-        ...prev,
-        quantity: newQty,
-        owned: newQty > 0,
-      }));
+      setSelectedCard((prev) =>
+        prev
+          ? { ...prev, quantity: newQty, owned: newQty > 0 }
+          : prev,
+      );
     }
   };
 

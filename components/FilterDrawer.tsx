@@ -7,8 +7,19 @@ import {
   TextInput,
   ScrollView,
 } from "react-native";
-import { FILTER_GROUPS } from "../constants/gameData";
+import { FILTER_GROUPS, type FilterKey } from "../constants/gameData";
 import { colors, radius, spacing, typography } from "../constants/theme";
+import type { Filters } from "../hooks/useFilters";
+
+type Props = {
+  isOpen: boolean;
+  onClose: () => void;
+  showMissing: boolean;
+  setShowMissing: (val: boolean) => void;
+  filters: Filters;
+  setSearchName: (val: string) => void;
+  toggle: (key: FilterKey, value: string) => void;
+};
 
 export default function FilterDrawer({
   isOpen,
@@ -18,7 +29,7 @@ export default function FilterDrawer({
   filters,
   setSearchName,
   toggle,
-}) {
+}: Props) {
   return (
     <Modal visible={isOpen} transparent={true} animationType="fade">
       <View style={styles.drawerOverlay}>

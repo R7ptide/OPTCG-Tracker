@@ -10,7 +10,7 @@ import { STARTER_DECKS } from "../../constants/gameData";
 import { colors, radius, spacing, typography } from "../../constants/theme";
 
 export default function StartersMenu() {
-  const navigateToSet = (setId) => router.push(`/collection/${setId}`);
+  const navigateToSet = (setId: string) => router.push(`/collection/${setId}`);
 
   return (
     <ScrollView style={styles.container}>

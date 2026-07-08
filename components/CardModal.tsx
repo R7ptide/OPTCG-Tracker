@@ -8,7 +8,27 @@ import {
 } from "react-native";
 import { colors, radius, spacing, typography } from "../constants/theme";
 
-export default function CardModal({ card, onClose, onIncrement, onDecrement }) {
+export type CollectionCard = {
+  id: string;
+  name: string;
+  color: string;
+  type: string;
+  rarity: string;
+  cost: number | null;
+  imageUrl: string;
+  owned: boolean;
+  quantity: number;
+  playsetTotal: number;
+};
+
+type Props = {
+  card: CollectionCard | null;
+  onClose: () => void;
+  onIncrement: () => void;
+  onDecrement: () => void;
+};
+
+export default function CardModal({ card, onClose, onIncrement, onDecrement }: Props) {
   return (
     <Modal visible={!!card} transparent={true} animationType="fade">
       <View style={styles.modalOverlay}>

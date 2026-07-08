@@ -1,6 +1,14 @@
 import { useState } from "react";
+import type { FilterKey } from "../constants/gameData";
 
-const INITIAL = {
+export type Filters = {
+  searchName: string;
+  colors: string[];
+  types: string[];
+  rarities: string[];
+};
+
+const INITIAL: Filters = {
   searchName: "",
   colors: [],
   types: [],
@@ -8,12 +16,12 @@ const INITIAL = {
 };
 
 export const useFilters = () => {
-  const [filters, setFilters] = useState(INITIAL);
+  const [filters, setFilters] = useState<Filters>(INITIAL);
 
-  const setSearchName = (searchName) =>
+  const setSearchName = (searchName: string) =>
     setFilters((f) => ({ ...f, searchName }));
 
-  const toggle = (key, value) =>
+  const toggle = (key: FilterKey, value: string) =>
     setFilters((f) => ({
       ...f,
       [key]: f[key].includes(value)

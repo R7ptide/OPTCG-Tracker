@@ -12,8 +12,13 @@ import { useSync } from "../hooks/useSync";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
-import db from "../database";
+import db, { type CollectionRow } from "../database";
 import { colors, radius, spacing, typography } from "../constants/theme";
+
+type BackupRow = {
+  card_id: string;
+  quantity: number;
+};
 
 export default function Settings() {
   const { syncMasterList } = useSync();
@@ -29,7 +34,7 @@ export default function Settings() {
 
   const handleExport = async () => {
     try {
-      const collection = db.getAllSync("SELECT * FROM collection");
+      const collection = db.getAllSync<CollectionRow>("SELECT * FROM collection");
       if (collection.length === 0)
         return Alert.alert("Empty", "No cards to export!");
 
@@ -41,7 +46,8 @@ export default function Settings() {
         await Sharing.shareAsync(file.uri);
       }
     } catch (error) {
-      Alert.alert("Export Failed", error.message);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      Alert.alert("Export Failed", message);
     }
   };
 
@@ -67,7 +73,7 @@ export default function Settings() {
           {
             text: "Import",
             style: "destructive",
-            onPress: () => processImport(importedData),
+            onPress: () => processImport(importedData as BackupRow[]),
           },
         ],
       );
@@ -76,7 +82,7 @@ export default function Settings() {
     }
   };
 
-  const processImport = (data) => {
+  const processImport = (data: BackupRow[]) => {
     try {
       db.withTransactionSync(() => {
         db.runSync("DELETE FROM collection");
