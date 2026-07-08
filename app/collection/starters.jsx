@@ -6,12 +6,8 @@ import {
   StyleSheet,
 } from "react-native";
 import { router } from "expo-router";
-
-// Programmatically generate ST01 through ST30
-const starterDecks = Array.from(
-  { length: 30 },
-  (_, i) => `ST${String(i + 1).padStart(2, "0")}`,
-);
+import { STARTER_DECKS } from "../../constants/gameData";
+import { colors, radius, spacing, typography } from "../../constants/theme";
 
 export default function StartersMenu() {
   const navigateToSet = (setId) => router.push(`/collection/${setId}`);
@@ -21,7 +17,7 @@ export default function StartersMenu() {
       <Text style={styles.header}>Starter Decks</Text>
 
       <View style={styles.grid}>
-        {starterDecks.map((set) => (
+        {STARTER_DECKS.map((set) => (
           <TouchableOpacity
             key={set}
             style={styles.setCard}
@@ -32,8 +28,7 @@ export default function StartersMenu() {
         ))}
       </View>
 
-      {/* Bottom padding so the scroll doesn't get cut off by the screen edge */}
-      <View style={{ height: 40 }} />
+      <View style={{ height: spacing.xxl }} />
     </ScrollView>
   );
 }
@@ -41,37 +36,35 @@ export default function StartersMenu() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
-    padding: 15,
+    backgroundColor: colors.bg,
+    padding: spacing.md,
   },
   header: {
-    color: "#888",
-    fontSize: 18,
+    color: colors.textMuted,
+    fontSize: typography.sizes.xl,
     fontWeight: "bold",
-    marginTop: 10,
-    marginBottom: 15,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: spacing.sm,
     justifyContent: "space-between",
   },
-  // We use 3 columns here since "ST01" is a short string,
-  // keeping the list of 30 decks nicely compact!
   setCard: {
-    backgroundColor: "#1e1e1e",
-    paddingVertical: 15,
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    paddingVertical: spacing.md,
+    borderRadius: radius.sm,
     width: "31%",
     alignItems: "center",
-    marginBottom: 5,
+    marginBottom: spacing.xs,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: colors.border,
   },
   setText: {
-    color: "#fff",
-    fontSize: 16,
+    color: colors.text,
+    fontSize: typography.sizes.lg,
     fontWeight: "bold",
   },
 });

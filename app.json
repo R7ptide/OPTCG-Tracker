@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "OPTCGTracker",
-    "slug": "OPTCGTracker",
+    "name": "R7-Pose",
+    "slug": "r7-pose",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "optcgtracker",
+    "scheme": "r7pose",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

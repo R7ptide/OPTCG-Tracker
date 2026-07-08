@@ -5,152 +5,72 @@ import {
   Modal,
   TouchableOpacity,
   TextInput,
+  ScrollView,
 } from "react-native";
+import { FILTER_GROUPS } from "../constants/gameData";
+import { colors, radius, spacing, typography } from "../constants/theme";
 
 export default function FilterDrawer({
   isOpen,
   onClose,
   showMissing,
   setShowMissing,
-  searchName,
+  filters,
   setSearchName,
-  filterColors,
-  setFilterColors,
-  filterTypes,
-  setFilterTypes,
-  filterRarities,
-  setFilterRarities,
+  toggle,
 }) {
-  // Moved this helper inside the component where it belongs!
-  const toggleFilter = (setState, value) => {
-    setState((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
-    );
-  };
-
   return (
     <Modal visible={isOpen} transparent={true} animationType="fade">
       <View style={styles.drawerOverlay}>
         <TouchableOpacity style={styles.drawerCloseArea} onPress={onClose} />
         <View style={styles.drawerContent}>
-          <Text style={styles.drawerTitle}>Filters</Text>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.drawerTitle}>Filters</Text>
 
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              showMissing ? styles.filterActive : {},
-            ]}
-            onPress={() => setShowMissing(!showMissing)}
-          >
-            <Text style={styles.filterButtonText}>
-              {showMissing ? "Missing: SHOWN" : "Missing: HIDDEN"}
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleButton, showMissing && styles.toggleActive]}
+              onPress={() => setShowMissing(!showMissing)}
+            >
+              <Text style={styles.toggleButtonText}>
+                {showMissing ? "Missing: SHOWN" : "Missing: HIDDEN"}
+              </Text>
+            </TouchableOpacity>
 
-          <View style={styles.divider} />
+            <View style={styles.divider} />
 
-          <Text style={styles.filterLabel}>Card Name</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="e.g. Zoro"
-            placeholderTextColor="#666"
-            value={searchName}
-            onChangeText={setSearchName}
-          />
+            <Text style={styles.filterLabel}>Card Name</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="e.g. Zoro"
+              placeholderTextColor={colors.placeholder}
+              value={filters.searchName}
+              onChangeText={setSearchName}
+            />
 
-          <Text style={styles.filterLabel}>Color</Text>
-          <View style={styles.filterRow}>
-            {["Red", "Green", "Blue"].map((c) => (
-              <TouchableOpacity
-                key={c}
-                style={[
-                  styles.chip,
-                  filterColors.includes(c) && styles.chipActive,
-                ]}
-                onPress={() => toggleFilter(setFilterColors, c)}
-              >
-                <Text style={styles.chipText}>{c}</Text>
-              </TouchableOpacity>
+            {FILTER_GROUPS.map(({ key, label, options }) => (
+              <View key={key}>
+                <Text style={styles.filterLabel}>{label}</Text>
+                <View style={styles.chipRow}>
+                  {options.map((opt) => (
+                    <TouchableOpacity
+                      key={opt}
+                      style={[
+                        styles.chip,
+                        filters[key].includes(opt) && styles.chipActive,
+                      ]}
+                      onPress={() => toggle(key, opt)}
+                    >
+                      <Text style={styles.chipText}>{opt}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
             ))}
-          </View>
-          <View style={styles.filterRow}>
-            {["Purple", "Black", "Yellow"].map((c) => (
-              <TouchableOpacity
-                key={c}
-                style={[
-                  styles.chip,
-                  filterColors.includes(c) && styles.chipActive,
-                ]}
-                onPress={() => toggleFilter(setFilterColors, c)}
-              >
-                <Text style={styles.chipText}>{c}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
 
-          <Text style={styles.filterLabel}>Card Type</Text>
-          <View style={styles.filterRow}>
-            {["Leader", "Character"].map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[
-                  styles.chip,
-                  filterTypes.includes(t) && styles.chipActive,
-                ]}
-                onPress={() => toggleFilter(setFilterTypes, t)}
-              >
-                <Text style={styles.chipText}>{t}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.filterRow}>
-            {["Event", "Stage"].map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[
-                  styles.chip,
-                  filterTypes.includes(t) && styles.chipActive,
-                ]}
-                onPress={() => toggleFilter(setFilterTypes, t)}
-              >
-                <Text style={styles.chipText}>{t}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.filterLabel}>Rarity</Text>
-          <View style={styles.filterRow}>
-            {["C", "UC", "R", "SR"].map((r) => (
-              <TouchableOpacity
-                key={r}
-                style={[
-                  styles.chip,
-                  filterRarities.includes(r) && styles.chipActive,
-                ]}
-                onPress={() => toggleFilter(setFilterRarities, r)}
-              >
-                <Text style={styles.chipText}>{r}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.filterRow}>
-            {["SEC", "L", "SP", "TR"].map((r) => (
-              <TouchableOpacity
-                key={r}
-                style={[
-                  styles.chip,
-                  filterRarities.includes(r) && styles.chipActive,
-                ]}
-                onPress={() => toggleFilter(setFilterRarities, r)}
-              >
-                <Text style={styles.chipText}>{r}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <TouchableOpacity style={styles.closeDrawerButton} onPress={onClose}>
-            <Text style={styles.closeDrawerText}>Apply Filters</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.applyButton} onPress={onClose}>
+              <Text style={styles.applyButtonText}>Apply Filters</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -161,66 +81,84 @@ const styles = StyleSheet.create({
   drawerOverlay: {
     flex: 1,
     flexDirection: "row",
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backgroundColor: colors.overlaySoft,
   },
   drawerCloseArea: { flex: 1 },
   drawerContent: {
     width: "80%",
-    backgroundColor: "#1a1a1a",
-    padding: 20,
+    backgroundColor: colors.nav,
+    padding: spacing.lg,
     paddingTop: 60,
     borderLeftWidth: 1,
-    borderColor: "#333",
+    borderColor: colors.border,
   },
   drawerTitle: {
-    color: "#fff",
-    fontSize: 24,
+    color: colors.text,
+    fontSize: typography.sizes.xxl,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
-  divider: { height: 1, backgroundColor: "#333", marginVertical: 20 },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.lg,
+  },
   filterLabel: {
-    color: "#888",
-    fontSize: 12,
+    color: colors.textMuted,
+    fontSize: typography.sizes.xs,
     fontWeight: "bold",
     textTransform: "uppercase",
-    marginBottom: 10,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
   searchInput: {
-    backgroundColor: "#2a2a2a",
-    color: "#fff",
+    backgroundColor: colors.surfaceAlt,
+    color: colors.text,
     padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
+    borderRadius: radius.sm,
+    marginBottom: spacing.lg,
   },
-  filterRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   chip: {
-    flex: 1,
-    backgroundColor: "#2a2a2a",
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: colors.surfaceAlt,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "transparent",
   },
-  chipActive: { backgroundColor: "#6b21a8", borderColor: "#d8b4fe" },
-  chipText: { color: "#fff", fontWeight: "bold", fontSize: 12 },
-  filterButton: {
-    backgroundColor: "#2a2a2a",
-    padding: 15,
-    borderRadius: 8,
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primaryBorder },
+  chipText: {
+    color: colors.text,
+    fontWeight: "bold",
+    fontSize: typography.sizes.xs,
+  },
+  toggleButton: {
+    backgroundColor: colors.surfaceAlt,
+    padding: spacing.md,
+    borderRadius: radius.sm,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: colors.border,
   },
-  filterActive: { borderColor: "#4ade80" },
-  filterButtonText: { color: "#fff", fontWeight: "bold" },
-  closeDrawerButton: {
-    backgroundColor: "#4ade80",
-    padding: 15,
-    borderRadius: 8,
+  toggleActive: { borderColor: colors.accent },
+  toggleButtonText: { color: colors.text, fontWeight: "bold" },
+  applyButton: {
+    backgroundColor: colors.accent,
+    padding: spacing.md,
+    borderRadius: radius.sm,
     alignItems: "center",
-    marginTop: 30,
+    marginTop: spacing.xl,
   },
-  closeDrawerText: { color: "#000", fontWeight: "bold", fontSize: 16 },
+  applyButtonText: {
+    color: colors.textInverse,
+    fontWeight: "bold",
+    fontSize: typography.sizes.lg,
+  },
 });

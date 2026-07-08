@@ -6,6 +6,7 @@ import {
   Modal,
   TouchableOpacity,
 } from "react-native";
+import { colors, radius, spacing, typography } from "../constants/theme";
 
 export default function CardModal({ card, onClose, onIncrement, onDecrement }) {
   return (
@@ -41,7 +42,7 @@ export default function CardModal({ card, onClose, onIncrement, onDecrement }) {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    backgroundColor: colors.overlay,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -49,38 +50,42 @@ const styles = StyleSheet.create({
   modalLargeImage: {
     width: "100%",
     aspectRatio: 0.7,
-    borderRadius: 15,
-    marginBottom: 30,
+    borderRadius: radius.lg,
+    marginBottom: spacing.xl,
   },
   controlsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e1e1e",
-    padding: 15,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
     borderRadius: 50,
-    gap: 30,
+    gap: spacing.xl,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: colors.border,
   },
   circleBtn: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#6b21a8",
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
   },
   circleBtnText: {
-    color: "#fff",
-    fontSize: 30,
+    color: colors.text,
+    fontSize: typography.sizes.display,
     fontWeight: "bold",
     lineHeight: 35,
   },
   qtyDisplay: { alignItems: "center", width: 60 },
-  qtyValue: { color: "#fff", fontSize: 28, fontWeight: "bold" },
+  qtyValue: {
+    color: colors.text,
+    fontSize: 28,
+    fontWeight: "bold",
+  },
   qtyLabel: {
-    color: "#888",
-    fontSize: 12,
+    color: colors.textMuted,
+    fontSize: typography.sizes.xs,
     textTransform: "uppercase",
     fontWeight: "bold",
   },

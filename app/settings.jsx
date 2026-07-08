@@ -13,6 +13,7 @@ import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import db from "../database";
+import { colors, radius, spacing, typography } from "../constants/theme";
 
 export default function Settings() {
   const { syncMasterList } = useSync();
@@ -70,7 +71,7 @@ export default function Settings() {
           },
         ],
       );
-    } catch (error) {
+    } catch {
       Alert.alert("Import Failed", "The file is corrupt or invalid.");
     }
   };
@@ -78,7 +79,7 @@ export default function Settings() {
   const processImport = (data) => {
     try {
       db.withTransactionSync(() => {
-        db.runSync("DELETE FROM collection"); // Wipe existing
+        db.runSync("DELETE FROM collection");
         const insertStmt = db.prepareSync(
           "INSERT INTO collection (card_id, quantity) VALUES (?, ?)",
         );
@@ -89,7 +90,7 @@ export default function Settings() {
         });
       });
       Alert.alert("Success", "Collection restored successfully!");
-    } catch (error) {
+    } catch {
       Alert.alert("Database Error", "Failed to write imported data.");
     }
   };
@@ -107,8 +108,8 @@ export default function Settings() {
         <Ionicons
           name="cloud-upload-outline"
           size={20}
-          color="#4ade80"
-          style={{ marginRight: 10 }}
+          color={colors.accent}
+          style={styles.icon}
         />
         <Text style={styles.buttonText}>Export Collection (Backup)</Text>
       </TouchableOpacity>
@@ -117,8 +118,8 @@ export default function Settings() {
         <Ionicons
           name="cloud-download-outline"
           size={20}
-          color="#4ade80"
-          style={{ marginRight: 10 }}
+          color={colors.accent}
+          style={styles.icon}
         />
         <Text style={styles.buttonText}>Import Collection (Restore)</Text>
       </TouchableOpacity>
@@ -136,14 +137,14 @@ export default function Settings() {
         disabled={isSyncing}
       >
         {isSyncing ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.text} />
         ) : (
           <>
             <Ionicons
               name="sync-outline"
               size={20}
-              color="#fff"
-              style={{ marginRight: 10 }}
+              color={colors.text}
+              style={styles.icon}
             />
             <Text style={styles.buttonText}>Sync Latest Master List</Text>
           </>
@@ -154,33 +155,46 @@ export default function Settings() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212", padding: 20 },
+  container: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
   header: {
-    color: "#fff",
-    fontSize: 24,
+    color: colors.text,
+    fontSize: typography.sizes.xxl,
     fontWeight: "bold",
-    marginBottom: 20,
-    marginTop: 10,
+    marginBottom: spacing.lg,
+    marginTop: spacing.sm,
   },
-  description: { color: "#888", fontSize: 14, marginBottom: 15 },
-  divider: { height: 1, backgroundColor: "#333", marginVertical: 30 },
+  description: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.md,
+    marginBottom: spacing.md,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.xl,
+  },
   buttonAction: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1e1e1e",
+    backgroundColor: colors.surface,
     padding: 18,
-    borderRadius: 8,
-    marginBottom: 15,
+    borderRadius: radius.sm,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: "#4ade80",
+    borderColor: colors.accent,
   },
   buttonSync: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#6b21a8",
+    backgroundColor: colors.primary,
     padding: 18,
-    borderRadius: 8,
+    borderRadius: radius.sm,
   },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  buttonText: {
+    color: colors.text,
+    fontSize: typography.sizes.lg,
+    fontWeight: "bold",
+  },
+  icon: { marginRight: spacing.sm },
 });

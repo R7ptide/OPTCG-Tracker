@@ -7,26 +7,24 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams, Stack } from "expo-router";
-import { useContext, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { SettingsContext } from "../_layout";
+import { useSettings } from "../_layout";
+import { useFilters } from "../../hooks/useFilters";
 import db from "../../database";
 import { RARITY_MAP } from "../../constants/gameData";
+import { colors, radius, spacing, typography } from "../../constants/theme";
 import CardModal from "../../components/CardModal";
 import FilterDrawer from "../../components/FilterDrawer";
 
 export default function SetDetails() {
   const { set_id } = useLocalSearchParams();
-  const { showMissing, setShowMissing } = useContext(SettingsContext);
+  const { showMissing, setShowMissing } = useSettings();
+  const { filters, setSearchName, toggle } = useFilters();
 
   const [dbVersion, setDbVersion] = useState(0);
   const [selectedCard, setSelectedCard] = useState(null);
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchName, setSearchName] = useState("");
-  const [filterColors, setFilterColors] = useState([]);
-  const [filterTypes, setFilterTypes] = useState([]);
-  const [filterRarities, setFilterRarities] = useState([]);
 
   const { masterCards, setStats } = useMemo(() => {
     const ownedData = db.getAllSync(
@@ -70,26 +68,26 @@ export default function SetDetails() {
         total: masterList.length,
       },
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- dbVersion is an intentional invalidation trigger; the memo re-runs the DB read when it changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dbVersion is an intentional invalidation trigger
   }, [set_id, dbVersion]);
 
   const displayCards = masterCards.filter((card) => {
     if (!showMissing && !card.owned) return false;
     if (
-      searchName &&
-      !card.name.toLowerCase().includes(searchName.toLowerCase())
+      filters.searchName &&
+      !card.name.toLowerCase().includes(filters.searchName.toLowerCase())
     )
       return false;
     if (
-      filterColors.length > 0 &&
-      !filterColors.some((c) => card.color.includes(c))
+      filters.colors.length > 0 &&
+      !filters.colors.some((c) => card.color.includes(c))
     )
       return false;
-    if (filterTypes.length > 0 && !filterTypes.includes(card.type))
+    if (filters.types.length > 0 && !filters.types.includes(card.type))
       return false;
 
-    if (filterRarities.length > 0) {
-      const matchesRarity = filterRarities.some((shortRarity) => {
+    if (filters.rarities.length > 0) {
+      const matchesRarity = filters.rarities.some((shortRarity) => {
         const fullRarity = RARITY_MAP[shortRarity];
         return (
           card.rarity &&
@@ -157,9 +155,9 @@ export default function SetDetails() {
           headerRight: () => (
             <TouchableOpacity
               onPress={() => setIsMenuOpen(true)}
-              style={{ paddingRight: 10 }}
+              style={styles.headerIcon}
             >
-              <Ionicons name="filter" size={24} color="#fff" />
+              <Ionicons name="filter" size={24} color={colors.text} />
             </TouchableOpacity>
           ),
         }}
@@ -176,7 +174,7 @@ export default function SetDetails() {
         data={displayCards}
         keyExtractor={(item) => item.id}
         numColumns={3}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: spacing.xxl }}
         renderItem={({ item }) => {
           const isLeader = item.type && item.type.toLowerCase() === "leader";
           const isComplete = isLeader
@@ -201,7 +199,7 @@ export default function SetDetails() {
                   <Text
                     style={[
                       styles.qtyText,
-                      { color: isComplete ? "#4ade80" : "#eab308" },
+                      { color: isComplete ? colors.accent : colors.warning },
                     ]}
                   >
                     x{item.quantity}
@@ -218,20 +216,14 @@ export default function SetDetails() {
         }
       />
 
-      {/* ⭐️ Using our new components! */}
       <FilterDrawer
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         showMissing={showMissing}
         setShowMissing={setShowMissing}
-        searchName={searchName}
+        filters={filters}
         setSearchName={setSearchName}
-        filterColors={filterColors}
-        setFilterColors={setFilterColors}
-        filterTypes={filterTypes}
-        setFilterTypes={setFilterTypes}
-        filterRarities={filterRarities}
-        setFilterRarities={setFilterRarities}
+        toggle={toggle}
       />
 
       <CardModal
@@ -245,30 +237,39 @@ export default function SetDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212", padding: 10 },
-  headerBox: { marginBottom: 15, alignItems: "center" },
-  title: { color: "#fff", fontSize: 24, fontWeight: "bold" },
-  statsText: { color: "#888", fontSize: 14, marginTop: 5 },
+  container: { flex: 1, backgroundColor: colors.bg, padding: spacing.sm },
+  headerIcon: { paddingRight: spacing.sm },
+  headerBox: { marginBottom: spacing.md, alignItems: "center" },
+  title: {
+    color: colors.text,
+    fontSize: typography.sizes.xxl,
+    fontWeight: "bold",
+  },
+  statsText: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.md,
+    marginTop: spacing.xs,
+  },
   cardSlot: {
     flex: 1,
-    margin: 5,
+    margin: spacing.xs,
     aspectRatio: 0.7,
-    borderRadius: 8,
+    borderRadius: radius.sm,
     justifyContent: "center",
     alignItems: "center",
   },
-  cardImage: { width: "100%", height: "100%", borderRadius: 8 },
+  cardImage: { width: "100%", height: "100%", borderRadius: radius.sm },
   imageOwned: { opacity: 1 },
   imageMissing: { opacity: 0.2 },
   qtyBadge: {
     position: "absolute",
-    bottom: 5,
-    right: 5,
-    backgroundColor: "rgba(0,0,0,0.85)",
-    borderRadius: 10,
+    bottom: spacing.xs,
+    right: spacing.xs,
+    backgroundColor: colors.overlayBadge,
+    borderRadius: radius.sm,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  qtyText: { fontSize: 13, fontWeight: "bold" },
-  empty: { color: "#888", textAlign: "center", marginTop: 50 },
+  qtyText: { fontSize: typography.sizes.sm, fontWeight: "bold" },
+  empty: { color: colors.textMuted, textAlign: "center", marginTop: 50 },
 });

@@ -1,45 +1,30 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { router, useFocusEffect, Stack } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useState, useCallback } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import db from "../database";
+import { colors, radius, spacing, typography } from "../constants/theme";
+
+const readStats = () => {
+  try {
+    const unique = db.getFirstSync("SELECT COUNT(*) as count FROM collection").count;
+    const total = db.getFirstSync("SELECT SUM(quantity) as sum FROM collection").sum || 0;
+    return { unique, total };
+  } catch {
+    return { unique: 0, total: 0 };
+  }
+};
 
 export default function Home() {
-  const [stats, setStats] = useState({ unique: 0, total: 0 });
+  const [stats, setStats] = useState(readStats);
 
   useFocusEffect(
     useCallback(() => {
-      try {
-        const uniqueCount = db.getFirstSync(
-          "SELECT COUNT(*) as count FROM collection",
-        ).count;
-        const totalCount =
-          db.getFirstSync("SELECT SUM(quantity) as sum FROM collection").sum ||
-          0;
-        setStats({ unique: uniqueCount, total: totalCount });
-      } catch (error) {
-        console.log("Database not fully initialized yet.");
-      }
+      setStats(readStats());
     }, []),
   );
 
   return (
     <View style={styles.container}>
-      {/* Inject the Settings Icon into the Top Bar */}
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push("/settings")}
-              style={{ paddingRight: 10 }}
-            >
-              {/* 2. Replace the Text emoji with the Icon */}
-              <Ionicons name="settings-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-
       <View style={styles.statsCard}>
         <Text style={styles.statsTitle}>Vault Overview</Text>
         <View style={styles.statsRow}>
@@ -67,39 +52,39 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: colors.bg,
     justifyContent: "center",
-    padding: 20,
+    padding: spacing.lg,
   },
   statsCard: {
-    backgroundColor: "#1e1e1e",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 30,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: colors.border,
   },
   statsTitle: {
-    color: "#fff",
-    fontSize: 18,
+    color: colors.text,
+    fontSize: typography.sizes.xl,
     fontWeight: "bold",
-    marginBottom: 15,
+    marginBottom: spacing.md,
     textAlign: "center",
   },
   statsRow: { flexDirection: "row", justifyContent: "space-around" },
   statBox: { alignItems: "center" },
-  statNumber: { color: "#4ade80", fontSize: 32, fontWeight: "bold" },
+  statNumber: { color: colors.accent, fontSize: typography.sizes.display, fontWeight: "bold" },
   statLabel: {
-    color: "#888",
-    fontSize: 12,
+    color: colors.textMuted,
+    fontSize: typography.sizes.xs,
     textTransform: "uppercase",
-    marginTop: 5,
+    marginTop: spacing.xs,
   },
   menuButton: {
-    backgroundColor: "#6b21a8",
-    padding: 20,
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    padding: spacing.lg,
+    borderRadius: radius.md,
     alignItems: "center",
   },
-  buttonText: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+  buttonText: { color: colors.text, fontSize: typography.sizes.xxl, fontWeight: "bold" },
 });

@@ -1,4 +1,4 @@
-# One Piece Vault
+# R7-Pose
 
 A premium, offline-first native mobile application built to faithfully track One Piece TCG collections. Designed for collectors and players, it features smart playset calculations, advanced filtering, and complete data ownership.
 

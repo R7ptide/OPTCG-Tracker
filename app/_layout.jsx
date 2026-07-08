@@ -1,8 +1,26 @@
-import { Stack } from "expo-router";
-import { createContext, useState, useEffect } from "react";
+import { Stack, router } from "expo-router";
+import { createContext, useContext, useEffect, useState } from "react";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { initDB } from "../database";
+import { colors } from "../constants/theme";
 
-export const SettingsContext = createContext();
+const SettingsContext = createContext(null);
+
+export const useSettings = () => {
+  const ctx = useContext(SettingsContext);
+  if (!ctx) throw new Error("useSettings must be used inside <SettingsProvider>");
+  return ctx;
+};
+
+const SettingsHeaderButton = () => (
+  <TouchableOpacity
+    onPress={() => router.push("/settings")}
+    style={{ paddingRight: 10 }}
+  >
+    <Ionicons name="settings-outline" size={24} color={colors.text} />
+  </TouchableOpacity>
+);
 
 export default function Layout() {
   const [showMissing, setShowMissing] = useState(false);
@@ -15,15 +33,24 @@ export default function Layout() {
     <SettingsContext.Provider value={{ showMissing, setShowMissing }}>
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: "#1a1a1a" },
-          headerTintColor: "#fff",
+          headerStyle: { backgroundColor: colors.nav },
+          headerTintColor: colors.text,
           headerTitleStyle: { fontWeight: "bold" },
         }}
       >
-        <Stack.Screen name="index" options={{ title: "One Piece Vault" }} />
+        <Stack.Screen
+          name="index"
+          options={{
+            title: "R7-Pose",
+            headerRight: SettingsHeaderButton,
+          }}
+        />
         <Stack.Screen
           name="collection/index"
-          options={{ title: "Collections" }}
+          options={{
+            title: "Collections",
+            headerRight: SettingsHeaderButton,
+          }}
         />
         <Stack.Screen
           name="collection/starters"

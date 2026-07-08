@@ -5,34 +5,19 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { Stack, router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import {
   MAIN_SETS,
   EXTRA_BOOSTERS,
   PREMIUM_BOOSTERS,
 } from "../../constants/gameData";
+import { colors, radius, spacing, typography } from "../../constants/theme";
 
 export default function CollectionMenu() {
   const navigateToSet = (setId) => router.push(`/collection/${setId}`);
 
   return (
     <ScrollView style={styles.container}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push("/settings")}
-              style={{ paddingRight: 10 }}
-            >
-              {/* 2. Replace the Text emoji with the Icon */}
-              <Ionicons name="settings-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-
-      {/* 1. SPECIAL & PROMOS */}
       <Text style={styles.header}>Special & Promos</Text>
       <View style={styles.grid}>
         <TouchableOpacity
@@ -42,7 +27,6 @@ export default function CollectionMenu() {
           <Text style={styles.setText}>Starter Decks (ST)</Text>
         </TouchableOpacity>
 
-        {/* The new Promo route! */}
         <TouchableOpacity
           style={styles.setCardHalf}
           onPress={() => navigateToSet("P")}
@@ -50,7 +34,6 @@ export default function CollectionMenu() {
           <Text style={styles.setText}>Promos (P)</Text>
         </TouchableOpacity>
 
-        {/* PRBs moved to the Special section */}
         {PREMIUM_BOOSTERS.map((set) => (
           <TouchableOpacity
             key={set}
@@ -62,7 +45,6 @@ export default function CollectionMenu() {
         ))}
       </View>
 
-      {/* 2. MAIN EXPANSIONS */}
       <Text style={styles.header}>Main Expansions</Text>
       <View style={styles.grid}>
         {MAIN_SETS.map((set) => (
@@ -76,7 +58,6 @@ export default function CollectionMenu() {
         ))}
       </View>
 
-      {/* 3. EXTRA BOOSTERS */}
       <Text style={styles.header}>Extra Boosters</Text>
       <View style={styles.grid}>
         {EXTRA_BOOSTERS.map((set) => (
@@ -90,35 +71,35 @@ export default function CollectionMenu() {
         ))}
       </View>
 
-      <View style={{ height: 40 }} />
+      <View style={{ height: spacing.xxl }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121212", padding: 15 },
+  container: { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
   header: {
-    color: "#888",
-    fontSize: 18,
+    color: colors.textMuted,
+    fontSize: typography.sizes.xl,
     fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: spacing.sm,
     justifyContent: "space-between",
   },
   setCardHalf: {
-    backgroundColor: "#1e1e1e",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: radius.sm,
     width: "48%",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: colors.border,
   },
-  setText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  setText: { color: colors.text, fontSize: typography.sizes.lg, fontWeight: "bold" },
 });
