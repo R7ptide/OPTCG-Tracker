@@ -9,7 +9,7 @@ import {
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useSync } from "../hooks/useSync";
-import * as FileSystem from "expo-file-system";
+import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import db from "../database";
@@ -28,19 +28,16 @@ export default function Settings() {
 
   const handleExport = async () => {
     try {
-      // 1. Grab everything from the collection table
       const collection = db.getAllSync("SELECT * FROM collection");
       if (collection.length === 0)
         return Alert.alert("Empty", "No cards to export!");
 
-      // 2. Convert to JSON and save it to a temporary file
-      const jsonString = JSON.stringify(collection);
-      const fileUri = FileSystem.documentDirectory + "OP_Vault_Backup.json";
-      await FileSystem.writeAsStringAsync(fileUri, jsonString);
+      const file = new File(Paths.document, "OP_Vault_Backup.json");
+      file.create({ overwrite: true });
+      file.write(JSON.stringify(collection));
 
-      // 3. Open the native iOS/Android share sheet
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri);
+        await Sharing.shareAsync(file.uri);
       }
     } catch (error) {
       Alert.alert("Export Failed", error.message);
@@ -49,22 +46,18 @@ export default function Settings() {
 
   const handleImport = async () => {
     try {
-      // 1. Let the user pick a file
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/json",
       });
       if (result.canceled) return;
 
-      // 2. Read the file
-      const fileContent = await FileSystem.readAsStringAsync(
-        result.assets[0].uri,
-      );
+      const picked = new File(result.assets[0].uri);
+      const fileContent = await picked.text();
       const importedData = JSON.parse(fileContent);
 
       if (!Array.isArray(importedData))
         throw new Error("Invalid backup file format.");
 
-      // 3. Confirm before wiping current data
       Alert.alert(
         "Warning",
         "This will OVERWRITE your current collection. Are you sure?",

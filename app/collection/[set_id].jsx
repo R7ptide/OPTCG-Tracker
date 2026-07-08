@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams, Stack } from "expo-router";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { SettingsContext } from "../_layout";
 import db from "../../database";
@@ -19,8 +19,7 @@ export default function SetDetails() {
   const { set_id } = useLocalSearchParams();
   const { showMissing, setShowMissing } = useContext(SettingsContext);
 
-  const [masterCards, setMasterCards] = useState([]);
-  const [setStats, setSetStats] = useState({ unique: 0, total: 0 });
+  const [dbVersion, setDbVersion] = useState(0);
   const [selectedCard, setSelectedCard] = useState(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,7 +28,7 @@ export default function SetDetails() {
   const [filterTypes, setFilterTypes] = useState([]);
   const [filterRarities, setFilterRarities] = useState([]);
 
-  const fetchCards = () => {
+  const { masterCards, setStats } = useMemo(() => {
     const ownedData = db.getAllSync(
       "SELECT card_id, quantity FROM collection WHERE card_id LIKE ?",
       [`${set_id}-%`],
@@ -64,16 +63,15 @@ export default function SetDetails() {
       };
     });
 
-    setSetStats({
-      unique: masterList.filter((c) => c.owned).length,
-      total: masterList.length,
-    });
-    setMasterCards(masterList);
-  };
-
-  useEffect(() => {
-    fetchCards();
-  }, [set_id]);
+    return {
+      masterCards: masterList,
+      setStats: {
+        unique: masterList.filter((c) => c.owned).length,
+        total: masterList.length,
+      },
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dbVersion is an intentional invalidation trigger; the memo re-runs the DB read when it changes
+  }, [set_id, dbVersion]);
 
   const displayCards = masterCards.filter((card) => {
     if (!showMissing && !card.owned) return false;
@@ -120,7 +118,7 @@ export default function SetDetails() {
         cardId,
       ]);
 
-    fetchCards();
+    setDbVersion((v) => v + 1);
     setSelectedCard((prev) => ({
       ...prev,
       quantity: prev.quantity + 1,
@@ -142,7 +140,7 @@ export default function SetDetails() {
           [cardId],
         );
       else db.runSync("DELETE FROM collection WHERE card_id = ?", [cardId]);
-      fetchCards();
+      setDbVersion((v) => v + 1);
       const newQty = selectedCard.quantity - 1;
       setSelectedCard((prev) => ({
         ...prev,
