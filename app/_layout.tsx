@@ -14,18 +14,10 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 export const useSettings = (): SettingsContextValue => {
   const ctx = useContext(SettingsContext);
-  if (!ctx) throw new Error("useSettings must be used inside <SettingsProvider>");
+  if (!ctx)
+    throw new Error("useSettings must be used inside <SettingsProvider>");
   return ctx;
 };
-
-const SettingsHeaderButton = () => (
-  <TouchableOpacity
-    onPress={() => router.push("/settings")}
-    style={{ paddingRight: 10 }}
-  >
-    <Ionicons name="settings-outline" size={24} color={colors.text} />
-  </TouchableOpacity>
-);
 
 export default function Layout() {
   const [showMissing, setShowMissing] = useState(false);
@@ -47,14 +39,12 @@ export default function Layout() {
           name="index"
           options={{
             title: "R7-Pose",
-            headerRight: SettingsHeaderButton,
           }}
         />
         <Stack.Screen
           name="collection/index"
           options={{
-            title: "Collections",
-            headerRight: SettingsHeaderButton,
+            title: "My Collection",
           }}
         />
         <Stack.Screen
@@ -65,6 +55,10 @@ export default function Layout() {
           name="collection/[set_id]"
           options={{ title: "Set Details" }}
         />
+
+        <Stack.Screen name="stats" options={{ title: "Vault Stats" }} />
+        <Stack.Screen name="decks" options={{ title: "Deck Builder" }} />
+
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
       </Stack>
     </SettingsContext.Provider>
