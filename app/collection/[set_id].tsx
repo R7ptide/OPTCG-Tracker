@@ -32,7 +32,7 @@ type ExistingRow = { quantity: number };
 export default function SetDetails() {
   const params = useLocalSearchParams<{ set_id: string }>();
   const set_id = params.set_id;
-  const { showMissing, setShowMissing } = useSettings();
+  const { showMissing } = useSettings();
   const { filters, setSearchName, toggle } = useFilters();
 
   const [dbVersion, setDbVersion] = useState(0);
@@ -232,8 +232,6 @@ export default function SetDetails() {
       <FilterDrawer
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
-        showMissing={showMissing}
-        setShowMissing={setShowMissing}
         filters={filters}
         setSearchName={setSearchName}
         toggle={toggle}

@@ -1,9 +1,17 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Switch,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import db, { type CollectionRow } from "../database";
+import { useSettings } from "./_layout";
 import { colors, radius, spacing, typography } from "../constants/theme";
 
 type BackupRow = {
@@ -12,6 +20,8 @@ type BackupRow = {
 };
 
 export default function Settings() {
+  const { showMissing, setShowMissing } = useSettings();
+
   const handleExport = async () => {
     try {
       const collection = db.getAllSync<CollectionRow>(
@@ -85,6 +95,20 @@ export default function Settings() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.header}>Profile</Text>
+
+      <View style={styles.toggleRow}>
+        <Text style={styles.toggleLabel}>Show Missing Cards</Text>
+        <Switch
+          value={showMissing}
+          onValueChange={setShowMissing}
+          trackColor={{ false: colors.border, true: colors.primary }}
+          thumbColor={colors.text}
+        />
+      </View>
+
+      <View style={styles.divider} />
+
       <Text style={styles.header}>Data Management</Text>
 
       <Text style={styles.description}>
@@ -124,15 +148,31 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     marginTop: spacing.sm,
   },
-  description: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.md,
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginBottom: spacing.md,
+  },
+  toggleLabel: {
+    color: colors.text,
+    fontSize: typography.sizes.md,
+    fontWeight: "bold",
   },
   divider: {
     height: 1,
     backgroundColor: colors.border,
     marginVertical: spacing.xl,
+  },
+  description: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.md,
+    marginBottom: spacing.md,
   },
   buttonAction: {
     flexDirection: "row",

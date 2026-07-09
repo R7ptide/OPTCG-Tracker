@@ -14,8 +14,6 @@ import type { Filters } from "../hooks/useFilters";
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  showMissing: boolean;
-  setShowMissing: (val: boolean) => void;
   filters: Filters;
   setSearchName: (val: string) => void;
   toggle: (key: FilterKey, value: string) => void;
@@ -24,8 +22,6 @@ type Props = {
 export default function FilterDrawer({
   isOpen,
   onClose,
-  showMissing,
-  setShowMissing,
   filters,
   setSearchName,
   toggle,
@@ -37,17 +33,6 @@ export default function FilterDrawer({
         <View style={styles.drawerContent}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.drawerTitle}>Filters</Text>
-
-            <TouchableOpacity
-              style={[styles.toggleButton, showMissing && styles.toggleActive]}
-              onPress={() => setShowMissing(!showMissing)}
-            >
-              <Text style={styles.toggleButtonText}>
-                {showMissing ? "Missing: SHOWN" : "Missing: HIDDEN"}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={styles.divider} />
 
             <Text style={styles.filterLabel}>Card Name</Text>
             <TextInput
@@ -109,11 +94,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: spacing.lg,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.lg,
-  },
   filterLabel: {
     color: colors.textMuted,
     fontSize: typography.sizes.xs,
@@ -150,25 +130,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: typography.sizes.xs,
   },
-  toggleButton: {
-    backgroundColor: colors.surfaceAlt,
-    padding: spacing.md,
-    borderRadius: radius.sm,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  toggleActive: { borderColor: colors.accent },
-  toggleButtonText: { color: colors.text, fontWeight: "bold" },
   applyButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.primary,
     padding: spacing.md,
     borderRadius: radius.sm,
     alignItems: "center",
     marginTop: spacing.xl,
   },
   applyButtonText: {
-    color: colors.textInverse,
+    color: colors.text,
     fontWeight: "bold",
     fontSize: typography.sizes.lg,
   },

@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   smallButtonText: {
-    color: colors.textMuted,
+    color: colors.text,
     fontSize: typography.sizes.md,
     fontWeight: "bold",
     marginTop: spacing.xs,
