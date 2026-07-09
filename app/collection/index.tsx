@@ -47,7 +47,11 @@ function SetBox({ title, sets, onPress, stats }: SetBoxProps) {
             >
               <View style={styles.progressTrack} />
 
-              <View style={[styles.progressFill, { width: `${progress}%` }]} />
+              <View style={styles.progressBarContainer}>
+                <View
+                  style={[styles.progressFill, { width: `${progress}%` }]}
+                />
+              </View>
 
               <Text style={styles.setText}>{set}</Text>
             </TouchableOpacity>
@@ -79,14 +83,17 @@ export default function CollectionMenu() {
       try {
         allSets.forEach((setId) => {
           const totalRow = db.getFirstSync<{ count: number }>(
-            "SELECT COUNT(*) as count FROM cards WHERE set_id = ?",
+            "SELECT COUNT(id) as count FROM cards WHERE set_id = ?",
             [setId],
           );
           const total = totalRow?.count || 0;
 
           const ownedRow = db.getFirstSync<{ count: number }>(
-            "SELECT COUNT(DISTINCT card_id) as count FROM collection WHERE card_id LIKE ?",
-            [`${setId}-%`],
+            `SELECT COUNT(col.card_id) as count 
+            FROM collection col
+            INNER JOIN cards c ON col.card_id = c.id
+            WHERE c.set_id = ? AND col.quantity > 0`,
+            [setId],
           );
           const owned = ownedRow?.count || 0;
 
@@ -253,11 +260,16 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: colors.surfaceAlt,
   },
-  progressFill: {
+  progressBarContainer: {
     position: "absolute",
     bottom: 0,
     left: 0,
+    right: 0,
     height: 4,
+    backgroundColor: colors.surfaceAlt,
+  },
+  progressFill: {
+    height: "100%",
     backgroundColor: colors.accent,
   },
 });
