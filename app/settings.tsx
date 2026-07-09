@@ -93,6 +93,31 @@ export default function Settings() {
     }
   };
 
+  const handleWipeCollection = () => {
+    Alert.alert(
+      "Wipe Entire Collection?",
+      "This action is permanent and cannot be undone. All your collected cards will be erased.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            try {
+              db.runSync("DELETE FROM collection");
+              Alert.alert(
+                "Wiped",
+                "Your collection has been permanently deleted.",
+              );
+            } catch {
+              Alert.alert("Error", "Failed to delete collection.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Profile</Text>
@@ -134,6 +159,26 @@ export default function Settings() {
           style={styles.icon}
         />
         <Text style={styles.buttonText}>Import Collection (Restore)</Text>
+      </TouchableOpacity>
+
+      <View style={styles.divider} />
+
+      <Text style={styles.dangerHeader}>Danger Zone</Text>
+      <Text style={styles.description}>
+        Permanently erase all your collected cards from this device.
+      </Text>
+
+      <TouchableOpacity
+        style={styles.buttonDanger}
+        onPress={handleWipeCollection}
+      >
+        <Ionicons
+          name="trash-outline"
+          size={20}
+          color="#ef4444" // A universal alert red
+          style={styles.icon}
+        />
+        <Text style={styles.buttonTextDanger}>Wipe Collection</Text>
       </TouchableOpacity>
     </View>
   );
@@ -190,4 +235,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   icon: { marginRight: spacing.sm },
+  dangerHeader: {
+    color: "#ef4444",
+    fontSize: typography.sizes.lg,
+    fontWeight: "bold",
+    marginBottom: spacing.xs,
+  },
+  buttonDanger: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    padding: 18,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: "#ef4444",
+  },
+  buttonTextDanger: {
+    color: "#ef4444",
+    fontSize: typography.sizes.lg,
+    fontWeight: "bold",
+  },
 });
