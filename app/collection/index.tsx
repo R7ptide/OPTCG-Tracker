@@ -5,8 +5,9 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useState, useCallback } from "react";
+import db from "../../database";
 import {
   MAIN_SETS,
   EXTRA_BOOSTERS,
@@ -27,22 +28,31 @@ type SetBoxProps = {
   title: string;
   sets: readonly string[];
   onPress: (id: string) => void;
+  stats: Record<string, number>;
 };
 
-function SetBox({ title, sets, onPress }: SetBoxProps) {
+function SetBox({ title, sets, onPress, stats }: SetBoxProps) {
   return (
     <View style={styles.box}>
       <Text style={styles.boxTitle}>{title}</Text>
       <View style={styles.grid}>
-        {sets.map((set) => (
-          <TouchableOpacity
-            key={set}
-            style={styles.setCard}
-            onPress={() => onPress(set)}
-          >
-            <Text style={styles.setText}>{set}</Text>
-          </TouchableOpacity>
-        ))}
+        {sets.map((set) => {
+          const progress = stats[set] || 0;
+
+          return (
+            <TouchableOpacity
+              key={set}
+              style={styles.setCard}
+              onPress={() => onPress(set)}
+            >
+              <View style={styles.progressTrack} />
+
+              <View style={[styles.progressFill, { width: `${progress}%` }]} />
+
+              <Text style={styles.setText}>{set}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
@@ -50,7 +60,45 @@ function SetBox({ title, sets, onPress }: SetBoxProps) {
 
 export default function CollectionMenu() {
   const [activeTab, setActiveTab] = useState<Tab>("main");
+  const [stats, setStats] = useState<Record<string, number>>({});
+
   const navigateToSet = (setId: string) => router.push(`/collection/${setId}`);
+
+  useFocusEffect(
+    useCallback(() => {
+      const allSets = [
+        ...MAIN_SETS,
+        ...EXTRA_BOOSTERS,
+        ...PREMIUM_BOOSTERS,
+        "P",
+        ...STARTER_DECKS,
+      ];
+
+      const newStats: Record<string, number> = {};
+
+      try {
+        allSets.forEach((setId) => {
+          const totalRow = db.getFirstSync<{ count: number }>(
+            "SELECT COUNT(*) as count FROM cards WHERE set_id = ?",
+            [setId],
+          );
+          const total = totalRow?.count || 0;
+
+          const ownedRow = db.getFirstSync<{ count: number }>(
+            "SELECT COUNT(DISTINCT card_id) as count FROM collection WHERE card_id LIKE ?",
+            [`${setId}-%`],
+          );
+          const owned = ownedRow?.count || 0;
+
+          newStats[setId] = total > 0 ? (owned / total) * 100 : 0;
+        });
+
+        setStats(newStats);
+      } catch (error) {
+        console.log("Error loading set completion stats", error);
+      }
+    }, []),
+  );
 
   return (
     <View style={styles.wrapper}>
@@ -73,25 +121,40 @@ export default function CollectionMenu() {
         ))}
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
         {activeTab === "main" && (
           <>
-            <SetBox title="One Piece" sets={MAIN_SETS} onPress={navigateToSet} />
+            <SetBox
+              title="One Piece"
+              sets={MAIN_SETS}
+              onPress={navigateToSet}
+              stats={stats}
+            />
             <SetBox
               title="Extra Boosters"
               sets={EXTRA_BOOSTERS}
               onPress={navigateToSet}
+              stats={stats}
             />
             <SetBox
               title="Premium Boosters"
               sets={PREMIUM_BOOSTERS}
               onPress={navigateToSet}
+              stats={stats}
             />
           </>
         )}
 
         {activeTab === "special" && (
-          <SetBox title="Promos" sets={["P"]} onPress={navigateToSet} />
+          <SetBox
+            title="Promos"
+            sets={["P"]}
+            onPress={navigateToSet}
+            stats={stats}
+          />
         )}
 
         {activeTab === "sts" && (
@@ -99,6 +162,7 @@ export default function CollectionMenu() {
             title="Starter Decks"
             sets={STARTER_DECKS}
             onPress={navigateToSet}
+            stats={stats}
           />
         )}
 
@@ -166,17 +230,34 @@ const styles = StyleSheet.create({
   },
   setCard: {
     backgroundColor: colors.bg,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center",
     width: "48%",
+    overflow: "hidden",
   },
   setText: {
     color: colors.text,
     fontSize: typography.sizes.md,
     fontWeight: "bold",
+    marginBottom: 4,
+  },
+  progressTrack: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: colors.surfaceAlt,
+  },
+  progressFill: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    height: 4,
+    backgroundColor: colors.accent,
   },
 });
