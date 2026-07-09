@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { router, Stack, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -58,11 +59,14 @@ export default function Home() {
           title: "R7-Pose",
           headerTitleAlign: "center",
           headerLeft: () => (
-            <Ionicons
-              name="skull"
-              size={24}
-              color={colors.text}
-              style={{ marginLeft: 5 }}
+            <Image
+              source={require("../assets/images/icon.png")}
+              style={{
+                width: 28,
+                height: 28,
+                marginLeft: 5,
+                borderRadius: 6,
+              }}
             />
           ),
           headerRight: () => (
