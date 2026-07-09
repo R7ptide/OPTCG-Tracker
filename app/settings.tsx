@@ -2,17 +2,16 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Switch,
   StyleSheet,
-  ActivityIndicator,
   Alert,
 } from "react-native";
-import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useSync } from "../hooks/useSync";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import db, { type CollectionRow } from "../database";
+import { useSettings } from "./_layout";
 import { colors, radius, spacing, typography } from "../constants/theme";
 
 type BackupRow = {
@@ -21,20 +20,13 @@ type BackupRow = {
 };
 
 export default function Settings() {
-  const { syncMasterList } = useSync();
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    const success = await syncMasterList();
-    setIsSyncing(false);
-    if (success) Alert.alert("Success", "Master List updated!");
-    else Alert.alert("Error", "Failed to sync. Check connection.");
-  };
+  const { showMissing, setShowMissing } = useSettings();
 
   const handleExport = async () => {
     try {
-      const collection = db.getAllSync<CollectionRow>("SELECT * FROM collection");
+      const collection = db.getAllSync<CollectionRow>(
+        "SELECT * FROM collection",
+      );
       if (collection.length === 0)
         return Alert.alert("Empty", "No cards to export!");
 
@@ -103,6 +95,20 @@ export default function Settings() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.header}>Profile</Text>
+
+      <View style={styles.toggleRow}>
+        <Text style={styles.toggleLabel}>Show Missing Cards</Text>
+        <Switch
+          value={showMissing}
+          onValueChange={setShowMissing}
+          trackColor={{ false: colors.border, true: colors.primary }}
+          thumbColor={colors.text}
+        />
+      </View>
+
+      <View style={styles.divider} />
+
       <Text style={styles.header}>Data Management</Text>
 
       <Text style={styles.description}>
@@ -129,33 +135,6 @@ export default function Settings() {
         />
         <Text style={styles.buttonText}>Import Collection (Restore)</Text>
       </TouchableOpacity>
-
-      <View style={styles.divider} />
-
-      <Text style={styles.description}>
-        Pull the latest card dictionary from punk-records. You only need to do
-        this when a new set drops.
-      </Text>
-
-      <TouchableOpacity
-        style={styles.buttonSync}
-        onPress={handleSync}
-        disabled={isSyncing}
-      >
-        {isSyncing ? (
-          <ActivityIndicator color={colors.text} />
-        ) : (
-          <>
-            <Ionicons
-              name="sync-outline"
-              size={20}
-              color={colors.text}
-              style={styles.icon}
-            />
-            <Text style={styles.buttonText}>Sync Latest Master List</Text>
-          </>
-        )}
-      </TouchableOpacity>
     </View>
   );
 }
@@ -169,15 +148,31 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     marginTop: spacing.sm,
   },
-  description: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.md,
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginBottom: spacing.md,
+  },
+  toggleLabel: {
+    color: colors.text,
+    fontSize: typography.sizes.md,
+    fontWeight: "bold",
   },
   divider: {
     height: 1,
     backgroundColor: colors.border,
     marginVertical: spacing.xl,
+  },
+  description: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.md,
+    marginBottom: spacing.md,
   },
   buttonAction: {
     flexDirection: "row",
@@ -188,14 +183,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.accent,
-  },
-  buttonSync: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-    padding: 18,
-    borderRadius: radius.sm,
   },
   buttonText: {
     color: colors.text,

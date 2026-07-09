@@ -1,59 +1,91 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
-import db from "../database";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { router, Stack } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import { useSync } from "../hooks/useSync";
 import { colors, radius, spacing, typography } from "../constants/theme";
 
-type Stats = { unique: number; total: number };
-
-const readStats = (): Stats => {
-  try {
-    const uniqueRow = db.getFirstSync<{ count: number }>(
-      "SELECT COUNT(*) as count FROM collection",
-    );
-    const totalRow = db.getFirstSync<{ sum: number | null }>(
-      "SELECT SUM(quantity) as sum FROM collection",
-    );
-    return {
-      unique: uniqueRow?.count ?? 0,
-      total: totalRow?.sum ?? 0,
-    };
-  } catch {
-    return { unique: 0, total: 0 };
-  }
-};
-
 export default function Home() {
-  const [stats, setStats] = useState<Stats>(readStats);
+  const { syncMasterList } = useSync();
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      setStats(readStats());
-    }, []),
-  );
+  const handleSync = async () => {
+    setIsSyncing(true);
+    const success = await syncMasterList();
+    setIsSyncing(false);
+    if (success) Alert.alert("Success", "Master List updated!");
+    else Alert.alert("Error", "Failed to sync. Check connection.");
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>Vault Overview</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats.unique}</Text>
-            <Text style={styles.statLabel}>Unique Cards</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total Physical Cards</Text>
-          </View>
-        </View>
-      </View>
+      <Stack.Screen
+        options={{
+          title: "R7-Pose",
+          headerTitleAlign: "center",
+          headerLeft: () => (
+            <Ionicons
+              name="skull"
+              size={24}
+              color={colors.text}
+              style={{ marginLeft: 5 }}
+            />
+          ),
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={handleSync}
+              disabled={isSyncing}
+              style={{ paddingRight: 10 }}
+            >
+              {isSyncing ? (
+                <ActivityIndicator color={colors.accent} />
+              ) : (
+                <Ionicons name="sync-outline" size={24} color={colors.text} />
+              )}
+            </TouchableOpacity>
+          ),
+        }}
+      />
 
       <TouchableOpacity
-        style={styles.menuButton}
+        style={styles.mainButton}
         onPress={() => router.push("/collection")}
       >
-        <Text style={styles.buttonText}>My Collection</Text>
+        <Text style={styles.mainButtonText}>My Collection</Text>
       </TouchableOpacity>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.smallButton}
+          onPress={() => router.push("/decks")}
+        >
+          <Ionicons name="albums-outline" size={28} color={colors.text} />
+          <Text style={styles.smallButtonText}>Decks</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.smallButton}
+          onPress={() => router.push("/stats")}
+        >
+          <Ionicons name="bar-chart-outline" size={28} color={colors.text} />
+          <Text style={styles.smallButtonText}>Stats</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.smallButton}
+          onPress={() => router.push("/settings")}
+        >
+          <Ionicons name="settings-outline" size={28} color={colors.text} />
+          <Text style={styles.smallButtonText}>Settings</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -65,35 +97,36 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: spacing.lg,
   },
-  statsCard: {
-    backgroundColor: colors.surface,
+  mainButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.xxl,
     borderRadius: radius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
+    alignItems: "center",
+    marginBottom: spacing.lg,
+  },
+  mainButtonText: {
+    color: colors.text,
+    fontSize: typography.sizes.display,
+    fontWeight: "bold",
+  },
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  smallButton: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    paddingVertical: spacing.lg,
+    borderRadius: radius.md,
+    alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,
   },
-  statsTitle: {
+  smallButtonText: {
     color: colors.text,
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.md,
     fontWeight: "bold",
-    marginBottom: spacing.md,
-    textAlign: "center",
-  },
-  statsRow: { flexDirection: "row", justifyContent: "space-around" },
-  statBox: { alignItems: "center" },
-  statNumber: { color: colors.accent, fontSize: typography.sizes.display, fontWeight: "bold" },
-  statLabel: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    textTransform: "uppercase",
     marginTop: spacing.xs,
   },
-  menuButton: {
-    backgroundColor: colors.primary,
-    padding: spacing.lg,
-    borderRadius: radius.md,
-    alignItems: "center",
-  },
-  buttonText: { color: colors.text, fontSize: typography.sizes.xxl, fontWeight: "bold" },
 });
