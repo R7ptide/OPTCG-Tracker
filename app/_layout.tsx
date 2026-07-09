@@ -20,7 +20,7 @@ export const useSettings = (): SettingsContextValue => {
 };
 
 export default function Layout() {
-  const [showMissing, setShowMissing] = useState(false);
+  const [showMissing, setShowMissing] = useState(true);
 
   useEffect(() => {
     initDB();
@@ -56,7 +56,13 @@ export default function Layout() {
           options={{ title: "Set Details" }}
         />
 
-        <Stack.Screen name="stats" options={{ title: "Vault Stats" }} />
+        <Stack.Screen
+          name="tournaments"
+          options={{
+            title: "My Tournaments",
+          }}
+        />
+
         <Stack.Screen name="decks" options={{ title: "Deck Builder" }} />
 
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
