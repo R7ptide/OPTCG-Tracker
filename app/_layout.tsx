@@ -31,6 +31,7 @@ export default function Layout() {
           headerStyle: { backgroundColor: colors.nav },
           headerTintColor: colors.text,
           headerTitleStyle: { fontWeight: "bold" },
+          contentStyle: { backgroundColor: colors.bg },
         }}
       >
         <Stack.Screen

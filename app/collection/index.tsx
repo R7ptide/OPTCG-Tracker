@@ -54,7 +54,11 @@ function SetBox({ title, sets, onPress, stats }: SetBoxProps) {
                 />
               </View>
 
-              <Text style={styles.setText}>{set}</Text>
+              <View style={styles.setRow}>
+                <Text style={styles.setText}>{set}</Text>
+                <Text style={styles.setText}> - </Text>
+                <Text style={styles.setPercent}>{Math.round(progress)}%</Text>
+              </View>
             </TouchableOpacity>
           );
         })}
@@ -235,11 +239,21 @@ const styles = StyleSheet.create({
     width: "48%",
     overflow: "hidden",
   },
+  setRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: 4,
+  },
   setText: {
     color: colors.text,
     fontSize: typography.sizes.md,
     fontWeight: "bold",
-    marginBottom: 4,
+  },
+  setPercent: {
+    color: colors.accent,
+    fontSize: typography.sizes.sm,
+    fontWeight: "bold",
   },
   progressTrack: {
     position: "absolute",
