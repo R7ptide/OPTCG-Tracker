@@ -10,23 +10,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
-import db, { type CollectionRow } from "../database";
+import {
+  getAllCollectionRows,
+  restoreCollection,
+  wipeCollection,
+  type BackupRow,
+} from "../repositories/collection";
 import { useSettings } from "./_layout";
 import { colors, radius, spacing, typography } from "../constants/theme";
-
-type BackupRow = {
-  card_id: string;
-  quantity: number;
-};
 
 export default function Settings() {
   const { showMissing, setShowMissing } = useSettings();
 
   const handleExport = async () => {
     try {
-      const collection = db.getAllSync<CollectionRow>(
-        "SELECT * FROM collection",
-      );
+      const collection = getAllCollectionRows();
       if (collection.length === 0)
         return Alert.alert("Empty", "No cards to export!");
 
@@ -76,17 +74,7 @@ export default function Settings() {
 
   const processImport = (data: BackupRow[]) => {
     try {
-      db.withTransactionSync(() => {
-        db.runSync("DELETE FROM collection");
-        const insertStmt = db.prepareSync(
-          "INSERT INTO collection (card_id, quantity) VALUES (?, ?)",
-        );
-        data.forEach((item) => {
-          if (item.card_id && item.quantity) {
-            insertStmt.executeSync([item.card_id, item.quantity]);
-          }
-        });
-      });
+      restoreCollection(data);
       Alert.alert("Success", "Collection restored successfully!");
     } catch {
       Alert.alert("Database Error", "Failed to write imported data.");
@@ -104,7 +92,7 @@ export default function Settings() {
           style: "destructive",
           onPress: () => {
             try {
-              db.runSync("DELETE FROM collection");
+              wipeCollection();
               Alert.alert(
                 "Wiped",
                 "Your collection has been permanently deleted.",
@@ -175,7 +163,7 @@ export default function Settings() {
         <Ionicons
           name="trash-outline"
           size={20}
-          color="#ef4444" // A universal alert red
+          color={colors.danger}
           style={styles.icon}
         />
         <Text style={styles.buttonTextDanger}>Wipe Collection</Text>
@@ -236,7 +224,7 @@ const styles = StyleSheet.create({
   },
   icon: { marginRight: spacing.sm },
   dangerHeader: {
-    color: "#ef4444",
+    color: colors.danger,
     fontSize: typography.sizes.lg,
     fontWeight: "bold",
     marginBottom: spacing.xs,
@@ -244,14 +232,14 @@ const styles = StyleSheet.create({
   buttonDanger: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    backgroundColor: colors.dangerBg,
     padding: 18,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: "#ef4444",
+    borderColor: colors.danger,
   },
   buttonTextDanger: {
-    color: "#ef4444",
+    color: colors.danger,
     fontSize: typography.sizes.lg,
     fontWeight: "bold",
   },

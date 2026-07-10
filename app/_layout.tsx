@@ -1,7 +1,5 @@
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import { createContext, useContext, useEffect, useState } from "react";
-import { TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { initDB } from "../database";
 import { colors } from "../constants/theme";
 

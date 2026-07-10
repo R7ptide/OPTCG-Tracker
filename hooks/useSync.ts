@@ -1,4 +1,5 @@
-import db from "../database";
+import { type CardRow } from "../database";
+import { upsertCards } from "../repositories/cards";
 
 const CARDS_JSON_URL =
   "https://raw.githubusercontent.com/buhbbl/punk-records/main/english/index/cards_by_id.json";
@@ -29,30 +30,20 @@ export const useSync = () => {
         `Downloaded ${cardEntries.length} cards. Updating database...`,
       );
 
-      db.withTransactionSync(() => {
-        const insertStmt = db.prepareSync(`
-          INSERT OR REPLACE INTO cards
-          (id, name, color, type, cost, power, attribute, rarity, image_url, set_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
+      const cards: CardRow[] = cardEntries.map(([cardId, card]) => ({
+        id: cardId,
+        name: card.name ?? "Unknown",
+        color: card.colors ? card.colors.join("/") : "",
+        type: card.category ?? "",
+        cost: card.cost ?? 0,
+        power: card.power ?? 0,
+        attribute: card.attributes ? card.attributes.join("/") : "",
+        rarity: card.rarity ?? "",
+        image_url: card.img_full_url ?? "",
+        set_id: cardId.split("-")[0],
+      }));
 
-        for (const [cardId, card] of cardEntries) {
-          const setId = cardId.split("-")[0];
-
-          insertStmt.executeSync([
-            cardId,
-            card.name ?? "Unknown",
-            card.colors ? card.colors.join("/") : "",
-            card.category ?? "",
-            card.cost ?? 0,
-            card.power ?? 0,
-            card.attributes ? card.attributes.join("/") : "",
-            card.rarity ?? "",
-            card.img_full_url ?? "",
-            setId,
-          ]);
-        }
-      });
+      upsertCards(cards);
 
       console.log("Sync complete!");
       return true;

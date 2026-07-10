@@ -17,6 +17,8 @@ export const colors = {
   primaryBorder: "#d8b4fe",
   accent: "#4ade80",
   warning: "#eab308",
+  danger: "#ef4444",
+  dangerBg: "rgba(239, 68, 68, 0.1)",
 } as const;
 
 export const spacing = {

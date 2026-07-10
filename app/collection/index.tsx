@@ -7,7 +7,8 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useState, useCallback } from "react";
-import db from "../../database";
+import { getCardCountForSet } from "../../repositories/cards";
+import { getSetOwnedCount } from "../../repositories/collection";
 import {
   MAIN_SETS,
   EXTRA_BOOSTERS,
@@ -82,20 +83,8 @@ export default function CollectionMenu() {
 
       try {
         allSets.forEach((setId) => {
-          const totalRow = db.getFirstSync<{ count: number }>(
-            "SELECT COUNT(id) as count FROM cards WHERE set_id = ?",
-            [setId],
-          );
-          const total = totalRow?.count || 0;
-
-          const ownedRow = db.getFirstSync<{ count: number }>(
-            `SELECT COUNT(col.card_id) as count 
-            FROM collection col
-            INNER JOIN cards c ON col.card_id = c.id
-            WHERE c.set_id = ? AND col.quantity > 0`,
-            [setId],
-          );
-          const owned = ownedRow?.count || 0;
+          const total = getCardCountForSet(setId);
+          const owned = getSetOwnedCount(setId);
 
           newStats[setId] = total > 0 ? (owned / total) * 100 : 0;
         });

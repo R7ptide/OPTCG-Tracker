@@ -11,23 +11,12 @@ import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../_layout";
 import { useFilters } from "../../hooks/useFilters";
-import db from "../../database";
+import { getOwnedForSet, incrementCard, decrementCard } from "../../repositories/collection";
+import { getCardsForSet } from "../../repositories/cards";
 import { RARITY_MAP } from "../../constants/gameData";
 import { colors, radius, spacing, typography } from "../../constants/theme";
 import CardModal, { type CollectionCard } from "../../components/CardModal";
 import FilterDrawer from "../../components/FilterDrawer";
-
-type OwnedRow = { card_id: string; quantity: number };
-type MasterRow = {
-  id: string;
-  name: string | null;
-  color: string | null;
-  type: string | null;
-  cost: number | null;
-  rarity: string | null;
-  image_url: string | null;
-};
-type ExistingRow = { quantity: number };
 
 export default function SetDetails() {
   const params = useLocalSearchParams<{ set_id: string }>();
@@ -40,10 +29,7 @@ export default function SetDetails() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { masterCards, setStats } = useMemo(() => {
-    const ownedData = db.getAllSync<OwnedRow>(
-      "SELECT card_id, quantity FROM collection WHERE card_id LIKE ?",
-      [`${set_id}-%`],
-    );
+    const ownedData = getOwnedForSet(set_id);
     const ownedMap: Record<string, number> = {};
     const basePlaysetMap: Record<string, number> = {};
 
@@ -53,10 +39,7 @@ export default function SetDetails() {
       basePlaysetMap[baseId] = (basePlaysetMap[baseId] || 0) + row.quantity;
     });
 
-    const masterData = db.getAllSync<MasterRow>(
-      "SELECT id, name, color, type, cost, rarity, image_url FROM cards WHERE set_id = ? ORDER BY id ASC",
-      [set_id],
-    );
+    const masterData = getCardsForSet(set_id);
 
     const masterList: CollectionCard[] = masterData.map((row) => {
       const baseId = row.id.split("_")[0];
@@ -114,20 +97,7 @@ export default function SetDetails() {
 
   const handleIncrement = () => {
     if (!selectedCard) return;
-    const cardId = selectedCard.id;
-    const existing = db.getFirstSync<ExistingRow>(
-      "SELECT quantity FROM collection WHERE card_id = ?",
-      [cardId],
-    );
-    if (existing)
-      db.runSync(
-        "UPDATE collection SET quantity = quantity + 1 WHERE card_id = ?",
-        [cardId],
-      );
-    else
-      db.runSync("INSERT INTO collection (card_id, quantity) VALUES (?, 1)", [
-        cardId,
-      ]);
+    incrementCard(selectedCard.id);
 
     setDbVersion((v) => v + 1);
     setSelectedCard((prev) =>
@@ -139,26 +109,13 @@ export default function SetDetails() {
 
   const handleDecrement = () => {
     if (!selectedCard || selectedCard.quantity === 0) return;
-    const cardId = selectedCard.id;
-    const existing = db.getFirstSync<ExistingRow>(
-      "SELECT quantity FROM collection WHERE card_id = ?",
-      [cardId],
+    decrementCard(selectedCard.id);
+
+    setDbVersion((v) => v + 1);
+    const newQty = selectedCard.quantity - 1;
+    setSelectedCard((prev) =>
+      prev ? { ...prev, quantity: newQty, owned: newQty > 0 } : prev,
     );
-    if (existing) {
-      if (existing.quantity > 1)
-        db.runSync(
-          "UPDATE collection SET quantity = quantity - 1 WHERE card_id = ?",
-          [cardId],
-        );
-      else db.runSync("DELETE FROM collection WHERE card_id = ?", [cardId]);
-      setDbVersion((v) => v + 1);
-      const newQty = selectedCard.quantity - 1;
-      setSelectedCard((prev) =>
-        prev
-          ? { ...prev, quantity: newQty, owned: newQty > 0 }
-          : prev,
-      );
-    }
   };
 
   return (

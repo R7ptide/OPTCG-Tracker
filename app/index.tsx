@@ -11,23 +11,14 @@ import { router, Stack, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback } from "react";
 import { useSync } from "../hooks/useSync";
-import db from "../database";
+import { getCollectionStats, type CollectionStats } from "../repositories/collection";
 import { colors, radius, spacing, typography } from "../constants/theme";
 
-type Stats = { unique: number; total: number };
+type Stats = CollectionStats;
 
 const readStats = (): Stats => {
   try {
-    const uniqueRow = db.getFirstSync<{ count: number }>(
-      "SELECT COUNT(*) as count FROM collection",
-    );
-    const totalRow = db.getFirstSync<{ sum: number | null }>(
-      "SELECT SUM(quantity) as sum FROM collection",
-    );
-    return {
-      unique: uniqueRow?.count ?? 0,
-      total: totalRow?.sum ?? 0,
-    };
+    return getCollectionStats();
   } catch {
     return { unique: 0, total: 0 };
   }
@@ -64,7 +55,7 @@ export default function Home() {
               style={{
                 width: 28,
                 height: 28,
-                marginLeft: 5,
+                marginLeft: spacing.xs,
                 borderRadius: 6,
               }}
             />
@@ -73,7 +64,7 @@ export default function Home() {
             <TouchableOpacity
               onPress={handleSync}
               disabled={isSyncing}
-              style={{ paddingRight: 10 }}
+              style={{ paddingRight: spacing.sm }}
             >
               {isSyncing ? (
                 <ActivityIndicator color={colors.accent} />
