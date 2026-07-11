@@ -55,14 +55,14 @@ export default function Layout() {
           options={{ title: "Set Details" }}
         />
 
-        <Stack.Screen
+        {/*<Stack.Screen
           name="tournaments"
           options={{
             title: "My Tournaments",
           }}
         />
 
-        <Stack.Screen name="decks" options={{ title: "Deck Builder" }} />
+        <Stack.Screen name="decks" options={{ title: "Deck Builder" }} />*/}
 
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
       </Stack>

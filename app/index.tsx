@@ -11,7 +11,10 @@ import { router, Stack, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback } from "react";
 import { useSync } from "../hooks/useSync";
-import { getCollectionStats, type CollectionStats } from "../repositories/collection";
+import {
+  getCollectionStats,
+  type CollectionStats,
+} from "../repositories/collection";
 import { colors, radius, spacing, typography } from "../constants/theme";
 
 type Stats = CollectionStats;
@@ -98,22 +101,22 @@ export default function Home() {
         <Text style={styles.mainButtonText}>My Collection</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+      {/*<TouchableOpacity
         style={[styles.mainButton, { backgroundColor: colors.surfaceAlt }]}
         onPress={() => router.push("/tournaments")}
       >
         <Ionicons name="trophy-outline" size={36} color={colors.text} />
         <Text style={styles.mainButtonText}>My Tournaments</Text>
-      </TouchableOpacity>
+      </TouchableOpacity>*/}
 
       <View style={styles.actionRow}>
-        <TouchableOpacity
+        {/*<TouchableOpacity
           style={styles.smallButton}
           onPress={() => router.push("/decks")}
         >
           <Ionicons name="albums-outline" size={28} color={colors.text} />
           <Text style={styles.smallButtonText}>Decks</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={styles.smallButton}
