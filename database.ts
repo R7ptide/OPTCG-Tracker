@@ -47,6 +47,14 @@ const MIGRATIONS: Migration[] = [
       );
     `);
   },
+  (db) => {
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY NOT NULL,
+        value TEXT
+      );
+    `);
+  },
   // Next migration example (for tournament tracking):
   // (db) => {
   //   db.execSync(`

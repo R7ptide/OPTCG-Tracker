@@ -7,8 +7,10 @@ import {
   TextInput,
   ScrollView,
 } from "react-native";
+import { useMemo } from "react";
 import { FILTER_GROUPS, type FilterKey } from "../constants/gameData";
-import { colors, radius, spacing, typography } from "../constants/theme";
+import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
+import { useSettings } from "../app/_layout";
 import type { Filters } from "../hooks/useFilters";
 
 type Props = {
@@ -26,6 +28,8 @@ export default function FilterDrawer({
   setSearchName,
   toggle,
 }: Props) {
+  const { colors } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Modal visible={isOpen} transparent={true} animationType="fade">
       <View style={styles.drawerOverlay}>
@@ -73,7 +77,8 @@ export default function FilterDrawer({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   drawerOverlay: {
     flex: 1,
     flexDirection: "row",

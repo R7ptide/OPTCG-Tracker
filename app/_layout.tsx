@@ -1,13 +1,20 @@
 import { Stack } from "expo-router";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { initDB } from "../database";
-import { colors } from "../constants/theme";
+import { darkColors, lightColors, type ThemeColors } from "../constants/theme";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import { getSetting, setSetting } from "../repositories/settings";
+
+const SHOW_MISSING_KEY = "showMissing";
+const LIGHT_MODE_KEY = "isLightMode";
 
 type SettingsContextValue = {
   showMissing: boolean;
   setShowMissing: (val: boolean) => void;
+  isLightMode: boolean;
+  toggleLightMode: () => void;
+  colors: ThemeColors;
 };
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -20,13 +27,40 @@ export const useSettings = (): SettingsContextValue => {
 };
 
 function LayoutContent() {
-  const [showMissing, setShowMissing] = useState(true);
+  const [showMissing, setShowMissingState] = useState(true);
+  const [isLightMode, setIsLightModeState] = useState(false);
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<Error | null>(null);
+
+  const colors = isLightMode ? lightColors : darkColors;
+
+  const setShowMissing = (val: boolean) => {
+    setShowMissingState(val);
+    setSetting(SHOW_MISSING_KEY, String(val));
+  };
+
+  const toggleLightMode = () => {
+    setIsLightModeState((prev) => {
+      const next = !prev;
+      setSetting(LIGHT_MODE_KEY, String(next));
+      return next;
+    });
+  };
+
+  const contextValue = useMemo(
+    () => ({ showMissing, setShowMissing, isLightMode, toggleLightMode, colors }),
+    [showMissing, isLightMode, colors],
+  );
 
   useEffect(() => {
     try {
       initDB();
+      const storedShowMissing = getSetting(SHOW_MISSING_KEY);
+      if (storedShowMissing !== null)
+        setShowMissingState(storedShowMissing === "true");
+      const storedLightMode = getSetting(LIGHT_MODE_KEY);
+      if (storedLightMode !== null)
+        setIsLightModeState(storedLightMode === "true");
       setDbReady(true);
     } catch (err) {
       setDbError(err instanceof Error ? err : new Error(String(err)));
@@ -37,14 +71,14 @@ function LayoutContent() {
 
   if (!dbReady) {
     return (
-      <View style={styles.splash}>
+      <View style={[styles.splash, { backgroundColor: colors.bg }]}>
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <SettingsContext.Provider value={{ showMissing, setShowMissing }}>
+    <SettingsContext.Provider value={contextValue}>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.nav },
@@ -104,7 +138,6 @@ export default function Layout() {
 const styles = StyleSheet.create({
   splash: {
     flex: 1,
-    backgroundColor: colors.bg,
     justifyContent: "center",
     alignItems: "center",
   },

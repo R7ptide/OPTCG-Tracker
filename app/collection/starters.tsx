@@ -6,10 +6,14 @@ import {
   StyleSheet,
 } from "react-native";
 import { router } from "expo-router";
+import { useMemo } from "react";
 import { STARTER_DECKS } from "../../constants/gameData";
-import { colors, radius, spacing, typography } from "../../constants/theme";
+import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
+import { useSettings } from "../_layout";
 
 export default function StartersMenu() {
+  const { colors } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const navigateToSet = (setId: string) => router.push(`/collection/${setId}`);
 
   return (
@@ -33,7 +37,8 @@ export default function StartersMenu() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,

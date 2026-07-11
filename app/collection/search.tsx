@@ -18,10 +18,13 @@ import {
   incrementCard,
   decrementCard,
 } from "../../repositories/collection";
-import { colors, radius, spacing, typography } from "../../constants/theme";
+import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
+import { useSettings } from "../_layout";
 import CardModal, { type CollectionCard } from "../../components/CardModal";
 
 export default function CardSearch() {
+  const { colors } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [dbVersion, setDbVersion] = useState(0);
@@ -161,7 +164,8 @@ export default function CardSearch() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   searchBar: {
     flexDirection: "row",

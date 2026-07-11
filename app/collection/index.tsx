@@ -6,7 +6,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { router, useFocusEffect, Stack } from "expo-router";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { getCardCountForSet } from "../../repositories/cards";
 import { getSetOwnedCount } from "../../repositories/collection";
@@ -16,7 +16,8 @@ import {
   PREMIUM_BOOSTERS,
   STARTER_DECKS,
 } from "../../constants/gameData";
-import { colors, radius, spacing, typography } from "../../constants/theme";
+import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
+import { useSettings } from "../_layout";
 
 type Tab = "main" | "special" | "sts";
 
@@ -31,9 +32,10 @@ type SetBoxProps = {
   sets: readonly string[];
   onPress: (id: string) => void;
   stats: Record<string, number>;
+  styles: ReturnType<typeof createStyles>;
 };
 
-function SetBox({ title, sets, onPress, stats }: SetBoxProps) {
+function SetBox({ title, sets, onPress, stats, styles }: SetBoxProps) {
   return (
     <View style={styles.box}>
       <Text style={styles.boxTitle}>{title}</Text>
@@ -69,6 +71,8 @@ function SetBox({ title, sets, onPress, stats }: SetBoxProps) {
 }
 
 export default function CollectionMenu() {
+  const { colors } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [activeTab, setActiveTab] = useState<Tab>("main");
   const [stats, setStats] = useState<Record<string, number>>({});
 
@@ -146,18 +150,21 @@ export default function CollectionMenu() {
               sets={MAIN_SETS}
               onPress={navigateToSet}
               stats={stats}
+              styles={styles}
             />
             <SetBox
               title="Extra Boosters"
               sets={EXTRA_BOOSTERS}
               onPress={navigateToSet}
               stats={stats}
+              styles={styles}
             />
             <SetBox
               title="Premium Boosters"
               sets={PREMIUM_BOOSTERS}
               onPress={navigateToSet}
               stats={stats}
+              styles={styles}
             />
           </>
         )}
@@ -168,6 +175,7 @@ export default function CollectionMenu() {
             sets={["P"]}
             onPress={navigateToSet}
             stats={stats}
+            styles={styles}
           />
         )}
 
@@ -177,6 +185,7 @@ export default function CollectionMenu() {
             sets={STARTER_DECKS}
             onPress={navigateToSet}
             stats={stats}
+            styles={styles}
           />
         )}
 
@@ -186,7 +195,8 @@ export default function CollectionMenu() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: colors.bg,

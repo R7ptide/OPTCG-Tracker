@@ -14,14 +14,15 @@ import { useFilters } from "../../hooks/useFilters";
 import { getOwnedForSet, incrementCard, decrementCard } from "../../repositories/collection";
 import { getCardsForSet } from "../../repositories/cards";
 import { RARITY_MAP } from "../../constants/gameData";
-import { colors, radius, spacing, typography } from "../../constants/theme";
+import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
 import CardModal, { type CollectionCard } from "../../components/CardModal";
 import FilterDrawer from "../../components/FilterDrawer";
 
 export default function SetDetails() {
   const params = useLocalSearchParams<{ set_id: string }>();
   const set_id = params.set_id;
-  const { showMissing } = useSettings();
+  const { showMissing, colors } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { filters, setSearchName, toggle } = useFilters();
 
   const [dbVersion, setDbVersion] = useState(0);
@@ -204,7 +205,8 @@ export default function SetDetails() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, padding: spacing.sm },
   headerIcon: { paddingRight: spacing.sm },
   headerBox: { marginBottom: spacing.md, alignItems: "center" },

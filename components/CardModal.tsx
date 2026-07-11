@@ -6,7 +6,9 @@ import {
   Modal,
   TouchableOpacity,
 } from "react-native";
-import { colors, radius, spacing, typography } from "../constants/theme";
+import { useMemo } from "react";
+import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
+import { useSettings } from "../app/_layout";
 
 export type CollectionCard = {
   id: string;
@@ -29,6 +31,8 @@ type Props = {
 };
 
 export default function CardModal({ card, onClose, onIncrement, onDecrement }: Props) {
+  const { colors } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Modal visible={!!card} transparent={true} animationType="fade">
       <View style={styles.modalOverlay}>
@@ -59,7 +63,8 @@ export default function CardModal({ card, onClose, onIncrement, onDecrement }: P
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.overlay,
