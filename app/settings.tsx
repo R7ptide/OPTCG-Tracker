@@ -5,11 +5,13 @@ import {
   Switch,
   StyleSheet,
   Alert,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
+import { useMemo } from "react";
 import {
   getAllCollectionRows,
   restoreCollection,
@@ -17,10 +19,12 @@ import {
   type BackupRow,
 } from "../repositories/collection";
 import { useSettings } from "./_layout";
-import { colors, radius, spacing, typography } from "../constants/theme";
+import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
 
 export default function Settings() {
-  const { showMissing, setShowMissing } = useSettings();
+  const { showMissing, setShowMissing, isLightMode, toggleLightMode, colors } =
+    useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const handleExport = async () => {
     try {
@@ -107,8 +111,21 @@ export default function Settings() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
       <Text style={styles.header}>Profile</Text>
+
+      <View style={styles.toggleRow}>
+        <Text style={styles.toggleLabel}>Light Mode</Text>
+        <Switch
+          value={isLightMode}
+          onValueChange={toggleLightMode}
+          trackColor={{ false: colors.border, true: colors.primary }}
+          thumbColor={colors.text}
+        />
+      </View>
 
       <View style={styles.toggleRow}>
         <Text style={styles.toggleLabel}>Show Missing Cards</Text>
@@ -168,12 +185,14 @@ export default function Settings() {
         />
         <Text style={styles.buttonTextDanger}>Wipe Collection</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing.lg, paddingBottom: spacing.xxl },
   header: {
     color: colors.text,
     fontSize: typography.sizes.xxl,

@@ -9,14 +9,15 @@ import {
 } from "react-native";
 import { router, Stack, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useSync } from "../hooks/useSync";
 import {
   getCollectionStats,
   type CollectionStats,
 } from "../repositories/collection";
 import { getTotalCardCount } from "../repositories/cards";
-import { colors, radius, spacing, typography } from "../constants/theme";
+import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
+import { useSettings } from "./_layout";
 
 type Stats = CollectionStats;
 
@@ -37,6 +38,8 @@ const readHasCards = (): boolean => {
 };
 
 export default function Home() {
+  const { colors } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { syncMasterList } = useSync();
   const [isSyncing, setIsSyncing] = useState(false);
   const [stats, setStats] = useState<Stats>(readStats);
@@ -114,8 +117,10 @@ export default function Home() {
             style={styles.mainButton}
             onPress={() => router.push("/collection")}
           >
-            <Ionicons name="layers-outline" size={36} color={colors.text} />
-            <Text style={styles.mainButtonText}>My Collection</Text>
+            <Ionicons name="layers-outline" size={36} color="#fff" />
+            <Text style={[styles.mainButtonText, styles.mainButtonTextOnPrimary]}>
+              My Collection
+            </Text>
           </TouchableOpacity>
         </>
       ) : (
@@ -169,7 +174,8 @@ export default function Home() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -250,6 +256,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: typography.sizes.xxl,
     fontWeight: "bold",
+  },
+  mainButtonTextOnPrimary: {
+    color: "#fff",
   },
   actionRow: {
     flexDirection: "row",
