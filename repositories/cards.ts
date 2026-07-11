@@ -1,5 +1,12 @@
 import db, { type CardRow } from "../database";
 
+export const getTotalCardCount = (): number => {
+  const row = db.getFirstSync<{ count: number }>(
+    "SELECT COUNT(id) as count FROM cards",
+  );
+  return row?.count ?? 0;
+};
+
 export const getCardCountForSet = (setId: string): number => {
   const row = db.getFirstSync<{ count: number }>(
     "SELECT COUNT(id) as count FROM cards WHERE set_id = ?",
@@ -17,6 +24,16 @@ export const getCardsForSet = (setId: string): MasterCardRow[] => {
   return db.getAllSync<MasterCardRow>(
     "SELECT id, name, color, type, cost, rarity, image_url FROM cards WHERE set_id = ? ORDER BY id ASC",
     [setId],
+  );
+};
+
+export const searchCardsByName = (
+  name: string,
+  limit = 100,
+): MasterCardRow[] => {
+  return db.getAllSync<MasterCardRow>(
+    "SELECT id, name, color, type, cost, rarity, image_url FROM cards WHERE name LIKE ? ORDER BY name ASC LIMIT ?",
+    [`%${name}%`, limit],
   );
 };
 
