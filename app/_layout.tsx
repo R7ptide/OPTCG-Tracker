@@ -26,23 +26,30 @@ export const useSettings = (): SettingsContextValue => {
   return ctx;
 };
 
+type PersistedSettings = { showMissing: boolean; isLightMode: boolean };
+
+const DEFAULT_SETTINGS: PersistedSettings = {
+  showMissing: true,
+  isLightMode: false,
+};
+
 function LayoutContent() {
-  const [showMissing, setShowMissingState] = useState(true);
-  const [isLightMode, setIsLightModeState] = useState(false);
+  const [settings, setSettings] = useState<PersistedSettings>(DEFAULT_SETTINGS);
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<Error | null>(null);
 
+  const { showMissing, isLightMode } = settings;
   const colors = isLightMode ? lightColors : darkColors;
 
   const setShowMissing = (val: boolean) => {
-    setShowMissingState(val);
+    setSettings((prev) => ({ ...prev, showMissing: val }));
     setSetting(SHOW_MISSING_KEY, String(val));
   };
 
   const toggleLightMode = () => {
-    setIsLightModeState((prev) => {
-      const next = !prev;
-      setSetting(LIGHT_MODE_KEY, String(next));
+    setSettings((prev) => {
+      const next = { ...prev, isLightMode: !prev.isLightMode };
+      setSetting(LIGHT_MODE_KEY, String(next.isLightMode));
       return next;
     });
   };
@@ -56,11 +63,18 @@ function LayoutContent() {
     try {
       initDB();
       const storedShowMissing = getSetting(SHOW_MISSING_KEY);
-      if (storedShowMissing !== null)
-        setShowMissingState(storedShowMissing === "true");
       const storedLightMode = getSetting(LIGHT_MODE_KEY);
-      if (storedLightMode !== null)
-        setIsLightModeState(storedLightMode === "true");
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time DB hydration on mount, not derived render state
+      setSettings({
+        showMissing:
+          storedShowMissing !== null
+            ? storedShowMissing === "true"
+            : DEFAULT_SETTINGS.showMissing,
+        isLightMode:
+          storedLightMode !== null
+            ? storedLightMode === "true"
+            : DEFAULT_SETTINGS.isLightMode,
+      });
       setDbReady(true);
     } catch (err) {
       setDbError(err instanceof Error ? err : new Error(String(err)));
