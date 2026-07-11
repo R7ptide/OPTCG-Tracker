@@ -15,6 +15,7 @@ import {
   getCollectionStats,
   type CollectionStats,
 } from "../repositories/collection";
+import { getTotalCardCount } from "../repositories/cards";
 import { colors, radius, spacing, typography } from "../constants/theme";
 
 type Stats = CollectionStats;
@@ -27,14 +28,24 @@ const readStats = (): Stats => {
   }
 };
 
+const readHasCards = (): boolean => {
+  try {
+    return getTotalCardCount() > 0;
+  } catch {
+    return false;
+  }
+};
+
 export default function Home() {
   const { syncMasterList } = useSync();
   const [isSyncing, setIsSyncing] = useState(false);
   const [stats, setStats] = useState<Stats>(readStats);
+  const [hasCards, setHasCards] = useState(readHasCards);
 
   useFocusEffect(
     useCallback(() => {
       setStats(readStats());
+      setHasCards(readHasCards());
     }, []),
   );
 
@@ -42,8 +53,12 @@ export default function Home() {
     setIsSyncing(true);
     const success = await syncMasterList();
     setIsSyncing(false);
-    if (success) Alert.alert("Success", "Master List updated!");
-    else Alert.alert("Error", "Failed to sync. Check connection.");
+    if (success) {
+      setHasCards(readHasCards());
+      Alert.alert("Success", "Master List updated!");
+    } else {
+      Alert.alert("Error", "Failed to sync. Check connection.");
+    }
   };
 
   return (
@@ -79,27 +94,51 @@ export default function Home() {
         }}
       />
 
-      <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>Collection Stats</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats.unique}</Text>
-            <Text style={styles.statLabel}>Unique Cards</Text>
+      {hasCards ? (
+        <>
+          <View style={styles.statsCard}>
+            <Text style={styles.statsTitle}>Collection Stats</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{stats.unique}</Text>
+                <Text style={styles.statLabel}>Unique Cards</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{stats.total}</Text>
+                <Text style={styles.statLabel}>Total Cards</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total Cards</Text>
-          </View>
-        </View>
-      </View>
 
-      <TouchableOpacity
-        style={styles.mainButton}
-        onPress={() => router.push("/collection")}
-      >
-        <Ionicons name="layers-outline" size={36} color={colors.text} />
-        <Text style={styles.mainButtonText}>My Collection</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.mainButton}
+            onPress={() => router.push("/collection")}
+          >
+            <Ionicons name="layers-outline" size={36} color={colors.text} />
+            <Text style={styles.mainButtonText}>My Collection</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <View style={styles.emptyCard}>
+          <Ionicons name="cloud-download-outline" size={40} color={colors.accent} />
+          <Text style={styles.emptyTitle}>Welcome to R7-Pose</Text>
+          <Text style={styles.emptyText}>
+            No card data yet. Sync the master list to start tracking your
+            collection.
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyButton}
+            onPress={handleSync}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <ActivityIndicator color={colors.text} />
+            ) : (
+              <Text style={styles.emptyButtonText}>Sync Now</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/*<TouchableOpacity
         style={[styles.mainButton, { backgroundColor: colors.surfaceAlt }]}
@@ -164,6 +203,38 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xs,
     textTransform: "uppercase",
     marginTop: spacing.xs,
+  },
+  emptyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  emptyTitle: {
+    color: colors.text,
+    fontSize: typography.sizes.xl,
+    fontWeight: "bold",
+  },
+  emptyText: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.sm,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
+  emptyButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.md,
+  },
+  emptyButtonText: {
+    color: colors.text,
+    fontSize: typography.sizes.lg,
+    fontWeight: "bold",
   },
   mainButton: {
     flexDirection: "row",

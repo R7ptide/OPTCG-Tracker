@@ -1,7 +1,9 @@
 import { Stack } from "expo-router";
 import { createContext, useContext, useEffect, useState } from "react";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { initDB } from "../database";
 import { colors } from "../constants/theme";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 type SettingsContextValue = {
   showMissing: boolean;
@@ -17,12 +19,29 @@ export const useSettings = (): SettingsContextValue => {
   return ctx;
 };
 
-export default function Layout() {
+function LayoutContent() {
   const [showMissing, setShowMissing] = useState(true);
+  const [dbReady, setDbReady] = useState(false);
+  const [dbError, setDbError] = useState<Error | null>(null);
 
   useEffect(() => {
-    initDB();
+    try {
+      initDB();
+      setDbReady(true);
+    } catch (err) {
+      setDbError(err instanceof Error ? err : new Error(String(err)));
+    }
   }, []);
+
+  if (dbError) throw dbError;
+
+  if (!dbReady) {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </View>
+    );
+  }
 
   return (
     <SettingsContext.Provider value={{ showMissing, setShowMissing }}>
@@ -69,3 +88,20 @@ export default function Layout() {
     </SettingsContext.Provider>
   );
 }
+
+export default function Layout() {
+  return (
+    <ErrorBoundary>
+      <LayoutContent />
+    </ErrorBoundary>
+  );
+}
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
