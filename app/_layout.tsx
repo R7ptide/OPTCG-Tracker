@@ -73,6 +73,10 @@ function LayoutContent() {
           name="collection/[set_id]"
           options={{ title: "Set Details" }}
         />
+        <Stack.Screen
+          name="collection/search"
+          options={{ title: "Search Cards" }}
+        />
 
         {/*<Stack.Screen
           name="tournaments"

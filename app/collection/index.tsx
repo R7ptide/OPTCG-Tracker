@@ -5,8 +5,9 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, Stack } from "expo-router";
 import { useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { getCardCountForSet } from "../../repositories/cards";
 import { getSetOwnedCount } from "../../repositories/collection";
 import {
@@ -102,6 +103,19 @@ export default function CollectionMenu() {
 
   return (
     <View style={styles.wrapper}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => router.push("/collection/search")}
+              style={styles.headerIcon}
+            >
+              <Ionicons name="search" size={24} color={colors.text} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+
       <View style={styles.tabBar}>
         {TABS.map(({ key, label }) => (
           <TouchableOpacity
@@ -177,6 +191,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
+  headerIcon: { paddingRight: spacing.sm },
   tabBar: {
     flexDirection: "row",
     backgroundColor: colors.surface,
