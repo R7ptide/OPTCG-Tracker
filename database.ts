@@ -21,6 +21,27 @@ export type CollectionRow = {
   is_staple: number;
 };
 
+export type TournamentRow = {
+  id: number;
+  title: string;
+  description: string | null;
+  leader_id: string | null;
+  placement: number | null;
+  created_at: string;
+};
+
+export type MatchResult = "W" | "L" | "BYE";
+
+export type MatchRow = {
+  id: number;
+  tournament_id: number;
+  opponent_leader_id: string | null;
+  result: MatchResult;
+  went_first: number | null;
+  comment: string | null;
+  created_at: string;
+};
+
 type Migration = (db: SQLite.SQLiteDatabase) => void;
 
 const MIGRATIONS: Migration[] = [
@@ -55,27 +76,34 @@ const MIGRATIONS: Migration[] = [
       );
     `);
   },
-  // Next migration example (for tournament tracking):
-  // (db) => {
-  //   db.execSync(`
-  //     CREATE TABLE tournaments (
-  //       id INTEGER PRIMARY KEY AUTOINCREMENT,
-  //       name TEXT NOT NULL,
-  //       date TEXT NOT NULL,
-  //       placement INTEGER
-  //     );
-  //     CREATE TABLE matches (
-  //       id INTEGER PRIMARY KEY AUTOINCREMENT,
-  //       tournament_id INTEGER NOT NULL,
-  //       opponent_leader TEXT,
-  //       result TEXT CHECK (result IN ('W','L','D')) NOT NULL,
-  //       FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE
-  //     );
-  //   `);
-  // },
+  (db) => {
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS tournaments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        leader_id TEXT,
+        placement INTEGER,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS matches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id INTEGER NOT NULL,
+        opponent_leader_id TEXT,
+        result TEXT CHECK (result IN ('W','L','BYE')) NOT NULL,
+        went_first BOOLEAN,
+        comment TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE
+      );
+    `);
+  },
 ];
 
 export const initDB = (): void => {
+  db.execSync("PRAGMA foreign_keys = ON;");
+
   const row = db.getFirstSync<{ user_version: number }>("PRAGMA user_version");
   const version = row?.user_version ?? 0;
   for (let i = version; i < MIGRATIONS.length; i++) {

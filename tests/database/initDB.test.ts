@@ -7,12 +7,18 @@ describe("initDB", () => {
 
     const tables = db
       .getAllSync<{ name: string }>(
-        "SELECT name FROM sqlite_master WHERE type = 'table'",
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
       )
       .map((t) => t.name)
       .sort();
 
-    expect(tables).toEqual(["cards", "collection", "settings"]);
+    expect(tables).toEqual([
+      "cards",
+      "collection",
+      "matches",
+      "settings",
+      "tournaments",
+    ]);
   });
 
   it("is idempotent — safe to run multiple times", () => {

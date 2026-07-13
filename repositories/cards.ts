@@ -27,6 +27,19 @@ export const getCardsForSet = (setId: string): MasterCardRow[] => {
   );
 };
 
+export const getCardById = (id: string): MasterCardRow | null => {
+  return db.getFirstSync<MasterCardRow>(
+    "SELECT id, name, color, type, cost, rarity, image_url FROM cards WHERE id = ?",
+    [id],
+  );
+};
+
+export const getAllLeaders = (): MasterCardRow[] => {
+  return db.getAllSync<MasterCardRow>(
+    "SELECT id, name, color, type, cost, rarity, image_url FROM cards WHERE type = 'Leader' ORDER BY name ASC",
+  );
+};
+
 export const searchCardsByName = (
   name: string,
   limit = 100,
