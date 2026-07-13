@@ -55,7 +55,13 @@ function LayoutContent() {
   };
 
   const contextValue = useMemo(
-    () => ({ showMissing, setShowMissing, isLightMode, toggleLightMode, colors }),
+    () => ({
+      showMissing,
+      setShowMissing,
+      isLightMode,
+      toggleLightMode,
+      colors,
+    }),
     [showMissing, isLightMode, colors],
   );
 
@@ -125,15 +131,14 @@ function LayoutContent() {
           name="collection/search"
           options={{ title: "Search Cards" }}
         />
-
-        {/*<Stack.Screen
-          name="tournaments"
+        <Stack.Screen
+          name="tournaments/index"
           options={{
             title: "My Tournaments",
           }}
         />
 
-        <Stack.Screen name="decks" options={{ title: "Deck Builder" }} />*/}
+        {/*<Stack.Screen name="decks" options={{ title: "Deck Builder" }} />*/}
 
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
       </Stack>
