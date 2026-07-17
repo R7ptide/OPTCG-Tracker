@@ -99,6 +99,35 @@ const MIGRATIONS: Migration[] = [
       );
     `);
   },
+  // One-time fixup: devices that ran the previous migration mid-development
+  // ended up with a `tournaments` table missing `created_at`. Safe to drop —
+  // this feature has no real user data yet.
+  (db) => {
+    db.execSync(`
+      DROP TABLE IF EXISTS matches;
+      DROP TABLE IF EXISTS tournaments;
+
+      CREATE TABLE tournaments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        leader_id TEXT,
+        placement INTEGER,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE matches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id INTEGER NOT NULL,
+        opponent_leader_id TEXT,
+        result TEXT CHECK (result IN ('W','L','BYE')) NOT NULL,
+        went_first BOOLEAN,
+        comment TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE
+      );
+    `);
+  },
 ];
 
 export const initDB = (): void => {

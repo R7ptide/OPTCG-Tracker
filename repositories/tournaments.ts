@@ -38,7 +38,7 @@ export const getTournaments = (): TournamentWithRecord[] => {
   return db.getAllSync<TournamentWithRecord>(`
     SELECT
       t.*,
-      COALESCE(SUM(CASE WHEN m.result = 'W' THEN 1 ELSE 0 END), 0) AS wins,
+      COALESCE(SUM(CASE WHEN m.result IN ('W', 'BYE') THEN 1 ELSE 0 END), 0) AS wins,
       COALESCE(SUM(CASE WHEN m.result = 'L' THEN 1 ELSE 0 END), 0) AS losses,
       COALESCE(SUM(CASE WHEN m.result = 'BYE' THEN 1 ELSE 0 END), 0) AS byes,
       COUNT(m.id) AS totalMatches
@@ -47,6 +47,16 @@ export const getTournaments = (): TournamentWithRecord[] => {
     GROUP BY t.id
     ORDER BY t.created_at DESC, t.id DESC
   `);
+};
+
+export const updateTournamentPlacement = (
+  id: number,
+  placement: number | null,
+): void => {
+  db.runSync("UPDATE tournaments SET placement = ? WHERE id = ?", [
+    placement,
+    id,
+  ]);
 };
 
 export type NewMatch = {
@@ -80,4 +90,32 @@ export const getMatchesForTournament = (tournamentId: number): MatchRow[] => {
     "SELECT * FROM matches WHERE tournament_id = ? ORDER BY id ASC",
     [tournamentId],
   );
+};
+
+export type MatchUpdate = {
+  opponentLeaderId?: string | null;
+  result: MatchResult;
+  wentFirst?: boolean | null;
+  comment?: string | null;
+};
+
+export const updateMatch = (matchId: number, input: MatchUpdate): void => {
+  db.runSync(
+    "UPDATE matches SET opponent_leader_id = ?, result = ?, went_first = ?, comment = ? WHERE id = ?",
+    [
+      input.opponentLeaderId ?? null,
+      input.result,
+      input.wentFirst === undefined || input.wentFirst === null
+        ? null
+        : input.wentFirst
+          ? 1
+          : 0,
+      input.comment ?? null,
+      matchId,
+    ],
+  );
+};
+
+export const deleteMatch = (matchId: number): void => {
+  db.runSync("DELETE FROM matches WHERE id = ?", [matchId]);
 };

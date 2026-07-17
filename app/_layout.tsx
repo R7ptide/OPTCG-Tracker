@@ -137,6 +137,14 @@ function LayoutContent() {
             title: "My Tournaments",
           }}
         />
+        <Stack.Screen
+          name="tournaments/new"
+          options={{ title: "New Tournament" }}
+        />
+        <Stack.Screen
+          name="tournaments/[id]"
+          options={{ title: "Tournament" }}
+        />
 
         {/*<Stack.Screen name="decks" options={{ title: "Deck Builder" }} />*/}
 

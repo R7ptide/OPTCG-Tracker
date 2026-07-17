@@ -4,8 +4,11 @@ import {
   createTournament,
   getTournamentById,
   getTournaments,
+  updateTournamentPlacement,
   addMatch,
   getMatchesForTournament,
+  updateMatch,
+  deleteMatch,
 } from "../../repositories/tournaments";
 
 beforeAll(() => {
@@ -51,8 +54,28 @@ describe("createTournament / getTournamentById", () => {
   });
 });
 
+describe("updateTournamentPlacement", () => {
+  it("sets the placement on an existing tournament", () => {
+    const id = createTournament({ title: "Cup G" });
+    updateTournamentPlacement(id, 1);
+    expect(getTournamentById(id)).toMatchObject({ placement: 1 });
+  });
+
+  it("overwrites a previously set placement", () => {
+    const id = createTournament({ title: "Cup H", placement: 4 });
+    updateTournamentPlacement(id, 11);
+    expect(getTournamentById(id)).toMatchObject({ placement: 11 });
+  });
+
+  it("clears the placement when set to null", () => {
+    const id = createTournament({ title: "Cup I", placement: 2 });
+    updateTournamentPlacement(id, null);
+    expect(getTournamentById(id)).toMatchObject({ placement: null });
+  });
+});
+
 describe("getTournaments", () => {
-  it("computes win/loss/bye record per tournament", () => {
+  it("counts a BYE as a win in the record, while tracking it separately too", () => {
     const id = createTournament({ title: "Cup A" });
     addMatch({ tournamentId: id, result: "W" });
     addMatch({ tournamentId: id, result: "W" });
@@ -62,7 +85,7 @@ describe("getTournaments", () => {
     const [tournament] = getTournaments();
     expect(tournament).toMatchObject({
       id,
-      wins: 2,
+      wins: 3,
       losses: 1,
       byes: 1,
       totalMatches: 4,
@@ -151,5 +174,65 @@ describe("addMatch / getMatchesForTournament", () => {
 
     expect(getMatchesForTournament(idA)).toHaveLength(1);
     expect(getMatchesForTournament(idB)).toHaveLength(1);
+  });
+});
+
+describe("updateMatch", () => {
+  it("overwrites result, opponent, turn order, and comment", () => {
+    const id = createTournament({ title: "Cup J" });
+    const matchId = addMatch({
+      tournamentId: id,
+      opponentLeaderId: "OP01-001",
+      result: "W",
+      wentFirst: true,
+      comment: "original note",
+    });
+
+    updateMatch(matchId, {
+      opponentLeaderId: "OP02-001",
+      result: "L",
+      wentFirst: false,
+      comment: "corrected note",
+    });
+
+    const [match] = getMatchesForTournament(id);
+    expect(match).toMatchObject({
+      opponent_leader_id: "OP02-001",
+      result: "L",
+      went_first: 0,
+      comment: "corrected note",
+    });
+  });
+
+  it("can convert a match to a BYE, clearing opponent and turn order", () => {
+    const id = createTournament({ title: "Cup K" });
+    const matchId = addMatch({
+      tournamentId: id,
+      opponentLeaderId: "OP01-001",
+      result: "W",
+      wentFirst: true,
+    });
+
+    updateMatch(matchId, { result: "BYE" });
+
+    const [match] = getMatchesForTournament(id);
+    expect(match).toMatchObject({
+      opponent_leader_id: null,
+      result: "BYE",
+      went_first: null,
+    });
+  });
+});
+
+describe("deleteMatch", () => {
+  it("removes only the targeted match", () => {
+    const id = createTournament({ title: "Cup L" });
+    const keep = addMatch({ tournamentId: id, result: "W" });
+    const remove = addMatch({ tournamentId: id, result: "L" });
+
+    deleteMatch(remove);
+
+    const matches = getMatchesForTournament(id);
+    expect(matches.map((m) => m.id)).toEqual([keep]);
   });
 });
