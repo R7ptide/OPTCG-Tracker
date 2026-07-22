@@ -1,20 +1,23 @@
 import db, { type MatchResult, type MatchRow, type TournamentRow } from "../database";
+import { toDateString } from "../utils/date";
 
 export type NewTournament = {
   title: string;
   description?: string | null;
   leaderId?: string | null;
   placement?: number | null;
+  eventDate?: string;
 };
 
 export const createTournament = (input: NewTournament): number => {
   const result = db.runSync(
-    "INSERT INTO tournaments (title, description, leader_id, placement) VALUES (?, ?, ?, ?)",
+    "INSERT INTO tournaments (title, description, leader_id, placement, event_date) VALUES (?, ?, ?, ?, ?)",
     [
       input.title,
       input.description ?? null,
       input.leaderId ?? null,
       input.placement ?? null,
+      input.eventDate ?? toDateString(new Date()),
     ],
   );
   return result.lastInsertRowId;
@@ -45,7 +48,7 @@ export const getTournaments = (): TournamentWithRecord[] => {
     FROM tournaments t
     LEFT JOIN matches m ON m.tournament_id = t.id
     GROUP BY t.id
-    ORDER BY t.created_at DESC, t.id DESC
+    ORDER BY t.event_date DESC, t.created_at DESC, t.id DESC
   `);
 };
 
@@ -57,6 +60,32 @@ export const updateTournamentPlacement = (
     placement,
     id,
   ]);
+};
+
+export type TournamentUpdate = {
+  title: string;
+  description?: string | null;
+  leaderId?: string | null;
+  placement?: number | null;
+  eventDate: string;
+};
+
+export const updateTournament = (id: number, input: TournamentUpdate): void => {
+  db.runSync(
+    "UPDATE tournaments SET title = ?, description = ?, leader_id = ?, placement = ?, event_date = ? WHERE id = ?",
+    [
+      input.title,
+      input.description ?? null,
+      input.leaderId ?? null,
+      input.placement ?? null,
+      input.eventDate,
+      id,
+    ],
+  );
+};
+
+export const deleteTournament = (id: number): void => {
+  db.runSync("DELETE FROM tournaments WHERE id = ?", [id]);
 };
 
 export type NewMatch = {

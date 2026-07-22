@@ -5,6 +5,8 @@ import {
   getTournamentById,
   getTournaments,
   updateTournamentPlacement,
+  updateTournament,
+  deleteTournament,
   addMatch,
   getMatchesForTournament,
   updateMatch,
@@ -52,6 +54,21 @@ describe("createTournament / getTournamentById", () => {
   it("returns null for a missing tournament", () => {
     expect(getTournamentById(9999)).toBeNull();
   });
+
+  it("defaults event_date to today when not provided", () => {
+    const id = createTournament({ title: "No Date Given" });
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    expect(getTournamentById(id)).toMatchObject({ event_date: today });
+  });
+
+  it("stores an explicit event_date for backfilled entries", () => {
+    const id = createTournament({
+      title: "Forgot to Log This One",
+      eventDate: "2024-03-01",
+    });
+    expect(getTournamentById(id)).toMatchObject({ event_date: "2024-03-01" });
+  });
 });
 
 describe("updateTournamentPlacement", () => {
@@ -71,6 +88,80 @@ describe("updateTournamentPlacement", () => {
     const id = createTournament({ title: "Cup I", placement: 2 });
     updateTournamentPlacement(id, null);
     expect(getTournamentById(id)).toMatchObject({ placement: null });
+  });
+});
+
+describe("updateTournament", () => {
+  it("overwrites all editable fields", () => {
+    const id = createTournament({
+      title: "Original Title",
+      description: "Original description",
+      leaderId: "OP01-001",
+      placement: 3,
+      eventDate: "2024-01-01",
+    });
+
+    updateTournament(id, {
+      title: "Corrected Title",
+      description: "Corrected description",
+      leaderId: "OP02-001",
+      placement: 1,
+      eventDate: "2024-02-15",
+    });
+
+    expect(getTournamentById(id)).toMatchObject({
+      title: "Corrected Title",
+      description: "Corrected description",
+      leader_id: "OP02-001",
+      placement: 1,
+      event_date: "2024-02-15",
+    });
+  });
+
+  it("clears optional fields when set to null", () => {
+    const id = createTournament({
+      title: "Cup M",
+      description: "Has a description",
+      leaderId: "OP01-001",
+      placement: 2,
+    });
+
+    updateTournament(id, {
+      title: "Cup M",
+      description: null,
+      leaderId: null,
+      placement: null,
+      eventDate: "2024-03-01",
+    });
+
+    expect(getTournamentById(id)).toMatchObject({
+      description: null,
+      leader_id: null,
+      placement: null,
+    });
+  });
+});
+
+describe("deleteTournament", () => {
+  it("removes the tournament and cascades to its matches", () => {
+    const id = createTournament({ title: "Cup N" });
+    addMatch({ tournamentId: id, result: "W" });
+    addMatch({ tournamentId: id, result: "L" });
+
+    deleteTournament(id);
+
+    expect(getTournamentById(id)).toBeNull();
+    expect(getMatchesForTournament(id)).toHaveLength(0);
+  });
+
+  it("leaves other tournaments untouched", () => {
+    const keep = createTournament({ title: "Keep Me" });
+    const remove = createTournament({ title: "Remove Me" });
+
+    deleteTournament(remove);
+
+    expect(getTournamentById(keep)).not.toBeNull();
+    expect(getTournamentById(remove)).toBeNull();
   });
 });
 
@@ -104,12 +195,28 @@ describe("getTournaments", () => {
     });
   });
 
-  it("orders tournaments newest first", () => {
+  it("orders tournaments newest first when logged in order", () => {
     const first = createTournament({ title: "Older" });
     const second = createTournament({ title: "Newer" });
 
     const ids = getTournaments().map((t) => t.id);
     expect(ids.indexOf(second)).toBeLessThan(ids.indexOf(first));
+  });
+
+  it("orders by event_date rather than logging order, for backfilled entries", () => {
+    const loggedFirstButEarlier = createTournament({
+      title: "Backfilled",
+      eventDate: "2024-01-01",
+    });
+    const loggedSecondButRecent = createTournament({
+      title: "Actually Recent",
+      eventDate: "2025-06-15",
+    });
+
+    const ids = getTournaments().map((t) => t.id);
+    expect(ids.indexOf(loggedSecondButRecent)).toBeLessThan(
+      ids.indexOf(loggedFirstButEarlier),
+    );
   });
 });
 

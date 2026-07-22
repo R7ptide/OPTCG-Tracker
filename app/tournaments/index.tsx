@@ -8,10 +8,12 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../_layout";
 import { getTournaments, type TournamentWithRecord } from "../../repositories/tournaments";
 import { getCardById } from "../../repositories/cards";
+import { formatDateDisplay } from "../../utils/date";
 import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
 
 type TournamentListItem = TournamentWithRecord & { leaderName: string | null };
@@ -28,6 +30,7 @@ const loadTournaments = (): TournamentListItem[] => {
 export default function TournamentList() {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
 
   useFocusEffect(
@@ -41,6 +44,7 @@ export default function TournamentList() {
       <FlatList
         data={tournaments}
         keyExtractor={(item) => String(item.id)}
+        style={styles.flatList}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -53,7 +57,7 @@ export default function TournamentList() {
                   uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${item.leader_id}.png`,
                 }}
                 style={styles.leaderThumb}
-                resizeMode="contain"
+                resizeMode="cover"
               />
             ) : (
               <View style={[styles.leaderThumb, styles.leaderThumbPlaceholder]}>
@@ -63,9 +67,10 @@ export default function TournamentList() {
 
             <View style={styles.cardInfo}>
               <Text style={styles.cardTitle}>{item.title}</Text>
-              {item.leaderName && (
-                <Text style={styles.cardLeader}>{item.leaderName}</Text>
-              )}
+              <Text style={styles.cardDate}>
+                {formatDateDisplay(item.event_date)}
+                {item.leaderName ? ` · ${item.leaderName}` : ""}
+              </Text>
               <View style={styles.recordRow}>
                 <Text style={styles.recordText}>
                   {item.wins}W - {item.losses}L
@@ -83,18 +88,21 @@ export default function TournamentList() {
           <View style={styles.empty}>
             <Ionicons name="trophy-outline" size={48} color={colors.textMuted} />
             <Text style={styles.emptyText}>
-              No tournaments yet. Tap + to log your first one.
+              No tournaments yet. Add your first one below.
             </Text>
           </View>
         }
       />
 
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push("/tournaments/new")}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => router.push("/tournaments/new")}
+        >
+          <Ionicons name="add" size={22} color="#fff" />
+          <Text style={styles.addButtonText}>Add New Tournament</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -102,6 +110,7 @@ export default function TournamentList() {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
+    flatList: { flex: 1 },
     list: { padding: spacing.md, paddingBottom: spacing.xxl },
     card: {
       flexDirection: "row",
@@ -130,7 +139,7 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: typography.sizes.lg,
       fontWeight: "bold",
     },
-    cardLeader: {
+    cardDate: {
       color: colors.textMuted,
       fontSize: typography.sizes.sm,
       marginTop: 2,
@@ -162,20 +171,23 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: typography.sizes.md,
       textAlign: "center",
     },
-    fab: {
-      position: "absolute",
-      right: spacing.lg,
-      bottom: spacing.lg,
-      width: 56,
-      height: 56,
-      borderRadius: radius.pill,
-      backgroundColor: colors.primary,
+    footer: {
+      padding: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    addButton: {
+      flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
-      elevation: 4,
-      shadowColor: "#000",
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
+      gap: spacing.xs,
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      paddingVertical: spacing.md,
+    },
+    addButtonText: {
+      color: "#fff",
+      fontSize: typography.sizes.lg,
+      fontWeight: "bold",
     },
   });

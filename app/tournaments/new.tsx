@@ -6,14 +6,20 @@ import {
   Image,
   StyleSheet,
   Alert,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, {
+  type DateTimePickerChangeEvent,
+} from "@react-native-community/datetimepicker";
 import { useSettings } from "../_layout";
 import { createTournament } from "../../repositories/tournaments";
 import { type MasterCardRow } from "../../repositories/cards";
 import LeaderPicker from "../../components/LeaderPicker";
+import { toDateString, formatDateDisplay } from "../../utils/date";
+import { parsePlacementInput } from "../../utils/placement";
 import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
 
 export default function NewTournament() {
@@ -25,6 +31,18 @@ export default function NewTournament() {
   const [placement, setPlacement] = useState("");
   const [leader, setLeader] = useState<MasterCardRow | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [eventDate, setEventDate] = useState(() => new Date());
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+
+  const handleDateChange = (
+    _event: DateTimePickerChangeEvent,
+    selected: Date,
+  ) => {
+    setDatePickerVisible(Platform.OS === "ios");
+    setEventDate(selected);
+  };
+
+  const handleDateDismiss = () => setDatePickerVisible(false);
 
   const handleCreate = () => {
     const trimmedTitle = title.trim();
@@ -33,18 +51,21 @@ export default function NewTournament() {
       return;
     }
 
-    const parsedPlacement = placement.trim()
-      ? parseInt(placement.trim(), 10)
-      : null;
+    const parsedPlacement = parsePlacementInput(placement);
+    if (!parsedPlacement.ok) {
+      Alert.alert(
+        "Invalid placement",
+        "Placement must be a positive number (1, 2, 3...).",
+      );
+      return;
+    }
 
     const id = createTournament({
       title: trimmedTitle,
       description: description.trim() || null,
       leaderId: leader?.id ?? null,
-      placement:
-        parsedPlacement !== null && !Number.isNaN(parsedPlacement)
-          ? parsedPlacement
-          : null,
+      placement: parsedPlacement.value,
+      eventDate: toDateString(eventDate),
     });
 
     router.replace(`/tournaments/${id}`);
@@ -64,6 +85,25 @@ export default function NewTournament() {
           value={title}
           onChangeText={setTitle}
         />
+
+        <Text style={styles.label}>Date</Text>
+        <TouchableOpacity
+          style={styles.dateSelector}
+          onPress={() => setDatePickerVisible(true)}
+        >
+          <Ionicons name="calendar-outline" size={20} color={colors.accent} />
+          <Text style={styles.dateText}>{formatDateDisplay(toDateString(eventDate))}</Text>
+        </TouchableOpacity>
+        {datePickerVisible && (
+          <DateTimePicker
+            value={eventDate}
+            mode="date"
+            maximumDate={new Date()}
+            display={Platform.OS === "ios" ? "inline" : "default"}
+            onValueChange={handleDateChange}
+            onDismiss={handleDateDismiss}
+          />
+        )}
 
         <Text style={styles.label}>Description</Text>
         <TextInput
@@ -151,6 +191,22 @@ const createStyles = (colors: ThemeColors) =>
     multilineInput: {
       minHeight: 80,
       textAlignVertical: "top",
+    },
+    dateSelector: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      backgroundColor: colors.surface,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    dateText: {
+      color: colors.text,
+      fontSize: typography.sizes.md,
+      fontWeight: "bold",
     },
     leaderSelector: {
       flexDirection: "row",

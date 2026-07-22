@@ -8,10 +8,16 @@ import {
   Modal,
   StyleSheet,
   Alert,
+  Platform,
+  ScrollView,
 } from "react-native";
-import { Stack, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { router, Stack, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, {
+  type DateTimePickerChangeEvent,
+} from "@react-native-community/datetimepicker";
 import { useSettings } from "../_layout";
 import {
   getTournamentById,
@@ -20,10 +26,14 @@ import {
   updateMatch,
   deleteMatch,
   updateTournamentPlacement,
+  updateTournament,
+  deleteTournament,
 } from "../../repositories/tournaments";
 import { getCardById, type MasterCardRow } from "../../repositories/cards";
 import type { MatchResult, MatchRow, TournamentRow } from "../../database";
 import LeaderPicker from "../../components/LeaderPicker";
+import { toDateString, fromDateString, formatDateDisplay } from "../../utils/date";
+import { parsePlacementInput } from "../../utils/placement";
 import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
 
 const COLOR_HEX: Record<string, string> = {
@@ -68,6 +78,7 @@ export default function TournamentDetail() {
   const tournamentId = Number(id);
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
 
   const [tournament, setTournament] = useState<TournamentRow | null>(null);
   const [leaderCard, setLeaderCard] = useState<MasterCardRow | null>(null);
@@ -75,6 +86,7 @@ export default function TournamentDetail() {
   const [matchModalVisible, setMatchModalVisible] = useState(false);
   const [editingMatch, setEditingMatch] = useState<EnrichedMatch | null>(null);
   const [placementModalVisible, setPlacementModalVisible] = useState(false);
+  const [editTournamentVisible, setEditTournamentVisible] = useState(false);
 
   const loadData = useCallback(() => {
     const t = getTournamentById(tournamentId);
@@ -115,7 +127,19 @@ export default function TournamentDetail() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: tournament.title }} />
+      <Stack.Screen
+        options={{
+          title: tournament.title,
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => setEditTournamentVisible(true)}
+              style={styles.headerIcon}
+            >
+              <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
 
       <View style={styles.summaryBox}>
         {leaderCard ? (
@@ -155,18 +179,22 @@ export default function TournamentDetail() {
           </View>
         </View>
 
-        {tournament.description && (
-          <View style={styles.summaryRight}>
+        <View style={styles.summaryRight}>
+          <Text style={styles.tournamentDate}>
+            {formatDateDisplay(tournament.event_date)}
+          </Text>
+          {tournament.description && (
             <Text style={styles.tournamentDesc} numberOfLines={4}>
               {tournament.description}
             </Text>
-          </View>
-        )}
+          )}
+        </View>
       </View>
 
       <FlatList
         data={matches}
         keyExtractor={(item) => String(item.id)}
+        style={styles.flatList}
         contentContainerStyle={styles.list}
         renderItem={({ item, index }) => (
           <TouchableOpacity
@@ -233,21 +261,24 @@ export default function TournamentDetail() {
           <View style={styles.empty}>
             <Ionicons name="game-controller-outline" size={40} color={colors.textMuted} />
             <Text style={styles.emptyText}>
-              No matches logged yet. Tap + to add your first round.
+              No matches logged yet. Add your first round below.
             </Text>
           </View>
         }
       />
 
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => {
-          setEditingMatch(null);
-          setMatchModalVisible(true);
-        }}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => {
+            setEditingMatch(null);
+            setMatchModalVisible(true);
+          }}
+        >
+          <Ionicons name="add" size={22} color="#fff" />
+          <Text style={styles.addButtonText}>Add New Match</Text>
+        </TouchableOpacity>
+      </View>
 
       <MatchModal
         key={
@@ -282,6 +313,21 @@ export default function TournamentDetail() {
           loadData();
         }}
       />
+
+      <EditTournamentModal
+        key={editTournamentVisible ? "edit-open" : "edit-closed"}
+        visible={editTournamentVisible}
+        tournament={tournament}
+        onClose={() => setEditTournamentVisible(false)}
+        onSaved={() => {
+          setEditTournamentVisible(false);
+          loadData();
+        }}
+        onDeleted={() => {
+          setEditTournamentVisible(false);
+          router.replace("/tournaments");
+        }}
+      />
     </View>
   );
 }
@@ -306,8 +352,15 @@ function PlacementModal({
   );
 
   const handleSave = () => {
-    const parsed = parseInt(value.trim(), 10);
-    onSave(!value.trim() || Number.isNaN(parsed) ? null : parsed);
+    const parsed = parsePlacementInput(value);
+    if (!parsed.ok) {
+      Alert.alert(
+        "Invalid placement",
+        "Placement must be a positive number (1, 2, 3...).",
+      );
+      return;
+    }
+    onSave(parsed.value);
   };
 
   return (
@@ -341,6 +394,197 @@ function PlacementModal({
           </View>
         </View>
       </View>
+    </Modal>
+  );
+}
+
+type EditTournamentModalProps = {
+  visible: boolean;
+  tournament: TournamentRow;
+  onClose: () => void;
+  onSaved: () => void;
+  onDeleted: () => void;
+};
+
+function EditTournamentModal({
+  visible,
+  tournament,
+  onClose,
+  onSaved,
+  onDeleted,
+}: EditTournamentModalProps) {
+  const { colors } = useSettings();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const [title, setTitle] = useState(tournament.title);
+  const [description, setDescription] = useState(tournament.description ?? "");
+  const [placement, setPlacement] = useState(
+    tournament.placement != null ? String(tournament.placement) : "",
+  );
+  const [leader, setLeader] = useState<MasterCardRow | null>(
+    tournament.leader_id ? getCardById(tournament.leader_id) : null,
+  );
+  const [eventDate, setEventDate] = useState(() =>
+    fromDateString(tournament.event_date),
+  );
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+
+  const handleDateChange = (
+    _event: DateTimePickerChangeEvent,
+    selected: Date,
+  ) => {
+    setDatePickerVisible(Platform.OS === "ios");
+    setEventDate(selected);
+  };
+
+  const handleDateDismiss = () => setDatePickerVisible(false);
+
+  const handleSave = () => {
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      Alert.alert("Title required", "Give your tournament a name first.");
+      return;
+    }
+
+    const parsedPlacement = parsePlacementInput(placement);
+    if (!parsedPlacement.ok) {
+      Alert.alert(
+        "Invalid placement",
+        "Placement must be a positive number (1, 2, 3...).",
+      );
+      return;
+    }
+
+    updateTournament(tournament.id, {
+      title: trimmedTitle,
+      description: description.trim() || null,
+      leaderId: leader?.id ?? null,
+      placement: parsedPlacement.value,
+      eventDate: toDateString(eventDate),
+    });
+    onSaved();
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete tournament?",
+      "This will also delete all its logged matches. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteTournament(tournament.id);
+            onDeleted();
+          },
+        },
+      ],
+    );
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalContainer}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Edit Tournament</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="close" size={24} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.modalContent}>
+          <Text style={styles.label}>Title</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. Regional Qualifier"
+            placeholderTextColor={colors.placeholder}
+            value={title}
+            onChangeText={setTitle}
+          />
+
+          <Text style={styles.label}>Date</Text>
+          <TouchableOpacity
+            style={styles.leaderSelector}
+            onPress={() => setDatePickerVisible(true)}
+          >
+            <Ionicons name="calendar-outline" size={20} color={colors.accent} />
+            <Text style={styles.leaderName}>
+              {formatDateDisplay(toDateString(eventDate))}
+            </Text>
+          </TouchableOpacity>
+          {datePickerVisible && (
+            <DateTimePicker
+              value={eventDate}
+              mode="date"
+              maximumDate={new Date()}
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              onValueChange={handleDateChange}
+              onDismiss={handleDateDismiss}
+            />
+          )}
+
+          <Text style={styles.label}>Description</Text>
+          <TextInput
+            style={[styles.input, styles.multilineInput]}
+            placeholder="Format, venue, notes..."
+            placeholderTextColor={colors.placeholder}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+          />
+
+          <Text style={styles.label}>Leader</Text>
+          <TouchableOpacity
+            style={styles.leaderSelector}
+            onPress={() => setPickerVisible(true)}
+          >
+            {leader ? (
+              <>
+                <Image
+                  source={{ uri: cardImageUrl(leader.id) }}
+                  style={styles.leaderThumbSmall}
+                  resizeMode="cover"
+                />
+                <Text style={styles.leaderName}>{leader.name}</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+                <Text style={styles.leaderPlaceholder}>Choose your leader</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <Text style={styles.label}>Placement (optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 2 for 2nd place"
+            placeholderTextColor={colors.placeholder}
+            value={placement}
+            onChangeText={setPlacement}
+            keyboardType="number-pad"
+          />
+
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.saveButtonText}>Save Changes</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.deleteButtonText}>Delete Tournament</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
+      <LeaderPicker
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onSelect={(selected) => {
+          setLeader(selected);
+          setPickerVisible(false);
+        }}
+      />
     </Modal>
   );
 }
@@ -556,6 +800,8 @@ function MatchModal({
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
+    headerIcon: { paddingRight: spacing.sm },
+    flatList: { flex: 1 },
     summaryBox: {
       flexDirection: "row",
       backgroundColor: colors.surface,
@@ -568,7 +814,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     leaderImageWrap: {
       width: 64,
-      height: 64,
+      aspectRatio: 0.7,
       borderRadius: radius.md,
       borderWidth: 2,
       overflow: "hidden",
@@ -583,7 +829,8 @@ const createStyles = (colors: ThemeColors) =>
     summaryMiddle: { justifyContent: "center" },
     leaderLabel: {
       color: colors.textMuted,
-      fontSize: typography.sizes.xs,
+      fontSize: typography.sizes.md,
+      fontWeight: "bold",
       marginBottom: 2,
     },
     recordRow: {
@@ -603,15 +850,22 @@ const createStyles = (colors: ThemeColors) =>
       paddingVertical: 4,
     },
     placementChipText: {
-      color: colors.primary,
+      color: colors.warning,
       fontSize: typography.sizes.sm,
       fontWeight: "bold",
     },
     summaryRight: { flex: 1, alignItems: "flex-end", justifyContent: "center" },
+    tournamentDate: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.xs,
+      fontWeight: "bold",
+      textAlign: "right",
+    },
     tournamentDesc: {
       color: colors.textMuted,
       fontSize: typography.sizes.xs,
       textAlign: "right",
+      marginTop: spacing.xs,
     },
     list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
     matchRow: {
@@ -689,21 +943,24 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: typography.sizes.md,
       textAlign: "center",
     },
-    fab: {
-      position: "absolute",
-      right: spacing.lg,
-      bottom: spacing.lg,
-      width: 56,
-      height: 56,
-      borderRadius: radius.pill,
-      backgroundColor: colors.primary,
+    footer: {
+      padding: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    addButton: {
+      flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
-      elevation: 4,
-      shadowColor: "#000",
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 4,
+      gap: spacing.xs,
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      paddingVertical: spacing.md,
+    },
+    addButtonText: {
+      color: "#fff",
+      fontSize: typography.sizes.lg,
+      fontWeight: "bold",
     },
     // Add-match modal styles
     modalContainer: { flex: 1, backgroundColor: colors.bg },

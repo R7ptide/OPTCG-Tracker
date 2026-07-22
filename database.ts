@@ -27,6 +27,7 @@ export type TournamentRow = {
   description: string | null;
   leader_id: string | null;
   placement: number | null;
+  event_date: string;
   created_at: string;
 };
 
@@ -126,6 +127,11 @@ const MIGRATIONS: Migration[] = [
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE
       );
+    `);
+  },
+  (db) => {
+    db.execSync(`
+      ALTER TABLE tournaments ADD COLUMN event_date TEXT NOT NULL DEFAULT CURRENT_DATE;
     `);
   },
 ];
