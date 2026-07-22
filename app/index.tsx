@@ -16,7 +16,12 @@ import {
   type CollectionStats,
 } from "../repositories/collection";
 import { getTotalCardCount } from "../repositories/cards";
-import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
+import {
+  radius,
+  spacing,
+  typography,
+  type ThemeColors,
+} from "../constants/theme";
 import { useSettings } from "./_layout";
 
 type Stats = CollectionStats;
@@ -118,14 +123,20 @@ export default function Home() {
             onPress={() => router.push("/collection")}
           >
             <Ionicons name="layers-outline" size={36} color="#fff" />
-            <Text style={[styles.mainButtonText, styles.mainButtonTextOnPrimary]}>
+            <Text
+              style={[styles.mainButtonText, styles.mainButtonTextOnPrimary]}
+            >
               My Collection
             </Text>
           </TouchableOpacity>
         </>
       ) : (
         <View style={styles.emptyCard}>
-          <Ionicons name="cloud-download-outline" size={40} color={colors.accent} />
+          <Ionicons
+            name="cloud-download-outline"
+            size={40}
+            color={colors.accent}
+          />
           <Text style={styles.emptyTitle}>Welcome to R7-Pose</Text>
           <Text style={styles.emptyText}>
             No card data yet. Sync the master list to start tracking your
@@ -145,13 +156,13 @@ export default function Home() {
         </View>
       )}
 
-      {/*<TouchableOpacity
+      <TouchableOpacity
         style={[styles.mainButton, { backgroundColor: colors.surfaceAlt }]}
         onPress={() => router.push("/tournaments")}
       >
         <Ionicons name="trophy-outline" size={36} color={colors.text} />
         <Text style={styles.mainButtonText}>My Tournaments</Text>
-      </TouchableOpacity>*/}
+      </TouchableOpacity>
 
       <View style={styles.actionRow}>
         {/*<TouchableOpacity
@@ -176,109 +187,109 @@ export default function Home() {
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    justifyContent: "center",
-    padding: spacing.lg,
-  },
-  statsCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  statsTitle: {
-    color: colors.text,
-    fontSize: typography.sizes.xl,
-    fontWeight: "bold",
-    marginBottom: spacing.md,
-    textAlign: "center",
-  },
-  statsRow: { flexDirection: "row", justifyContent: "space-around" },
-  statBox: { alignItems: "center" },
-  statNumber: {
-    color: colors.accent,
-    fontSize: typography.sizes.display,
-    fontWeight: "bold",
-  },
-  statLabel: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    textTransform: "uppercase",
-    marginTop: spacing.xs,
-  },
-  emptyCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    color: colors.text,
-    fontSize: typography.sizes.xl,
-    fontWeight: "bold",
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.sm,
-    textAlign: "center",
-    marginBottom: spacing.sm,
-  },
-  emptyButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.md,
-  },
-  emptyButtonText: {
-    color: colors.text,
-    fontSize: typography.sizes.lg,
-    fontWeight: "bold",
-  },
-  mainButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: spacing.md,
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.xl,
-    borderRadius: radius.md,
-    alignItems: "center",
-    marginBottom: spacing.md,
-  },
-  mainButtonText: {
-    color: colors.text,
-    fontSize: typography.sizes.xxl,
-    fontWeight: "bold",
-  },
-  mainButtonTextOnPrimary: {
-    color: "#fff",
-  },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  smallButton: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  smallButtonText: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.sm,
-    fontWeight: "bold",
-    marginTop: spacing.xs,
-  },
-});
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+      justifyContent: "center",
+      padding: spacing.lg,
+    },
+    statsCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      padding: spacing.lg,
+      marginBottom: spacing.xl,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statsTitle: {
+      color: colors.text,
+      fontSize: typography.sizes.xl,
+      fontWeight: "bold",
+      marginBottom: spacing.md,
+      textAlign: "center",
+    },
+    statsRow: { flexDirection: "row", justifyContent: "space-around" },
+    statBox: { alignItems: "center" },
+    statNumber: {
+      color: colors.accent,
+      fontSize: typography.sizes.display,
+      fontWeight: "bold",
+    },
+    statLabel: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.xs,
+      textTransform: "uppercase",
+      marginTop: spacing.xs,
+    },
+    emptyCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      padding: spacing.xl,
+      marginBottom: spacing.xl,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    emptyTitle: {
+      color: colors.text,
+      fontSize: typography.sizes.xl,
+      fontWeight: "bold",
+    },
+    emptyText: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.sm,
+      textAlign: "center",
+      marginBottom: spacing.sm,
+    },
+    emptyButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.xl,
+      borderRadius: radius.md,
+    },
+    emptyButtonText: {
+      color: colors.text,
+      fontSize: typography.sizes.lg,
+      fontWeight: "bold",
+    },
+    mainButton: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: spacing.md,
+      backgroundColor: colors.primary,
+      paddingVertical: spacing.xl,
+      borderRadius: radius.md,
+      alignItems: "center",
+      marginBottom: spacing.md,
+    },
+    mainButtonText: {
+      color: colors.text,
+      fontSize: typography.sizes.xxl,
+      fontWeight: "bold",
+    },
+    mainButtonTextOnPrimary: {
+      color: "#fff",
+    },
+    actionRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    smallButton: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    smallButtonText: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.sm,
+      fontWeight: "bold",
+      marginTop: spacing.xs,
+    },
+  });

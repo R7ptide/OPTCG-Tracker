@@ -6,14 +6,15 @@ const wrap = (raw: Database.Database) => ({
   execSync: (sql: string): void => {
     raw.exec(sql);
   },
-  getFirstSync: <T>(sql: string, params: unknown[] = []): T | undefined => {
-    return raw.prepare(sql).get(...params) as T | undefined;
+  getFirstSync: <T>(sql: string, params: unknown[] = []): T | null => {
+    return (raw.prepare(sql).get(...params) as T | undefined) ?? null;
   },
   getAllSync: <T>(sql: string, params: unknown[] = []): T[] => {
     return raw.prepare(sql).all(...params) as T[];
   },
   runSync: (sql: string, params: unknown[] = []) => {
-    return raw.prepare(sql).run(...params);
+    const result = raw.prepare(sql).run(...params);
+    return { lastInsertRowId: result.lastInsertRowid, changes: result.changes };
   },
   withTransactionSync: (fn: () => void): void => {
     raw.transaction(fn)();
