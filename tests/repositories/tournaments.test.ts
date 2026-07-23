@@ -4,6 +4,7 @@ import {
   createTournament,
   getTournamentById,
   getTournaments,
+  searchTournaments,
   updateTournamentPlacement,
   updateTournament,
   deleteTournament,
@@ -12,13 +13,28 @@ import {
   updateMatch,
   deleteMatch,
 } from "../../repositories/tournaments";
+import { upsertCards } from "../../repositories/cards";
+import type { CardRow } from "../../database";
+
+const makeCard = (overrides: Partial<CardRow> & { id: string }): CardRow => ({
+  name: null,
+  color: null,
+  type: null,
+  cost: null,
+  power: null,
+  attribute: null,
+  rarity: null,
+  image_url: null,
+  set_id: null,
+  ...overrides,
+});
 
 beforeAll(() => {
   initDB();
 });
 
 beforeEach(() => {
-  db.execSync("DELETE FROM matches; DELETE FROM tournaments;");
+  db.execSync("DELETE FROM matches; DELETE FROM tournaments; DELETE FROM cards;");
 });
 
 describe("createTournament / getTournamentById", () => {
@@ -341,5 +357,55 @@ describe("deleteMatch", () => {
 
     const matches = getMatchesForTournament(id);
     expect(matches.map((m) => m.id)).toEqual([keep]);
+  });
+});
+
+describe("searchTournaments", () => {
+  beforeEach(() => {
+    upsertCards([
+      makeCard({ id: "OP01-001", name: "Monkey D. Luffy", type: "Leader" }),
+      makeCard({ id: "OP02-001", name: "Roronoa Zoro", type: "Leader" }),
+    ]);
+  });
+
+  it("matches by tournament title", () => {
+    const match = createTournament({ title: "Regional Qualifier" });
+    createTournament({ title: "Local Store Event" });
+
+    const results = searchTournaments("regional");
+    expect(results.map((t) => t.id)).toEqual([match]);
+  });
+
+  it("matches by leader name, case-insensitively", () => {
+    const match = createTournament({
+      title: "Cup A",
+      leaderId: "OP01-001",
+    });
+    createTournament({ title: "Cup B", leaderId: "OP02-001" });
+
+    const results = searchTournaments("luffy");
+    expect(results.map((t) => t.id)).toEqual([match]);
+  });
+
+  it("returns no results when nothing matches", () => {
+    createTournament({ title: "Cup C", leaderId: "OP01-001" });
+    expect(searchTournaments("nonexistent")).toHaveLength(0);
+  });
+
+  it("returns everything for an empty query", () => {
+    const a = createTournament({ title: "Cup D" });
+    const b = createTournament({ title: "Cup E" });
+    expect(searchTournaments("").map((t) => t.id).sort()).toEqual(
+      [a, b].sort(),
+    );
+  });
+
+  it("still computes the win/loss record for matched tournaments", () => {
+    const id = createTournament({ title: "Cup F", leaderId: "OP01-001" });
+    addMatch({ tournamentId: id, result: "W" });
+    addMatch({ tournamentId: id, result: "L" });
+
+    const [result] = searchTournaments("luffy");
+    expect(result).toMatchObject({ wins: 1, losses: 1 });
   });
 });

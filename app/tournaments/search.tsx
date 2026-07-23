@@ -1,69 +1,69 @@
 import {
   View,
   Text,
+  StyleSheet,
   FlatList,
   Image,
+  TextInput,
   TouchableOpacity,
-  StyleSheet,
 } from "react-native";
-import { router, useFocusEffect, Stack } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useEffect, useMemo, useState } from "react";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useSettings } from "../_layout";
-import {
-  getTournaments,
-  type TournamentWithRecord,
-} from "../../repositories/tournaments";
-import { getCardById } from "../../repositories/cards";
-import { formatDateDisplay } from "../../utils/date";
+import { searchTournaments } from "../../repositories/tournaments";
 import {
   radius,
   spacing,
   typography,
   type ThemeColors,
 } from "../../constants/theme";
+import { formatDateDisplay } from "../../utils/date";
+import { useSettings } from "../_layout";
 
-type TournamentListItem = TournamentWithRecord & { leaderName: string | null };
-
-const loadTournaments = (): TournamentListItem[] => {
-  return getTournaments().map((tournament) => ({
-    ...tournament,
-    leaderName: tournament.leader_id
-      ? (getCardById(tournament.leader_id)?.name ?? null)
-      : null,
-  }));
-};
-
-export default function TournamentList() {
+export default function TournamentSearch() {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const insets = useSafeAreaInsets();
-  const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [dbVersion, setDbVersion] = useState(0);
 
-  useFocusEffect(
-    useCallback(() => {
-      setTournaments(loadTournaments());
-    }, []),
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 200);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const results = useMemo((): CollectionCard[] => {
+    if (!debouncedQuery) return [];
+
+    return searchTournaments(debouncedQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dbVersion is an intentional invalidation trigger
+  }, [debouncedQuery, dbVersion]);
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push("/tournaments/search")}
-              style={styles.headerIcon}
-            >
-              <Ionicons name="search" size={24} color={colors.text} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={18} color={colors.placeholder} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search a Tournament across all you've played..."
+          placeholderTextColor={colors.placeholder}
+          value={query}
+          onChangeText={setQuery}
+          autoFocus
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery("")}>
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color={colors.placeholder}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <FlatList
-        data={tournaments}
+        data={results}
         keyExtractor={(item) => String(item.id)}
         style={styles.flatList}
         contentContainerStyle={styles.list}
@@ -114,30 +114,13 @@ export default function TournamentList() {
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons
-              name="trophy-outline"
-              size={48}
-              color={colors.textMuted}
-            />
-            <Text style={styles.emptyText}>
-              No tournaments yet. Add your first one below.
-            </Text>
-          </View>
+          <Text style={styles.empty}>
+            {debouncedQuery
+              ? "No Tournaments found."
+              : "Type a Tournament name or a Leader card to search your Tournaments."}
+          </Text>
         }
       />
-
-      <View
-        style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}
-      >
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push("/tournaments/new")}
-        >
-          <Ionicons name="add" size={22} color="#fff" />
-          <Text style={styles.addButtonText}>Add New Tournament</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -145,6 +128,23 @@ export default function TournamentList() {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      backgroundColor: colors.surface,
+      margin: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchInput: {
+      flex: 1,
+      color: colors.text,
+      paddingVertical: spacing.sm,
+      fontSize: typography.sizes.md,
+    },
     headerIcon: { paddingRight: spacing.sm },
     flatList: { flex: 1 },
     list: { padding: spacing.md, paddingBottom: spacing.xxl },
@@ -206,24 +206,5 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
       fontSize: typography.sizes.md,
       textAlign: "center",
-    },
-    footer: {
-      padding: spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-    },
-    addButton: {
-      flexDirection: "row",
-      justifyContent: "center",
-      alignItems: "center",
-      gap: spacing.xs,
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,
-      paddingVertical: spacing.md,
-    },
-    addButtonText: {
-      color: "#fff",
-      fontSize: typography.sizes.lg,
-      fontWeight: "bold",
     },
   });

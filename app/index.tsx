@@ -156,13 +156,31 @@ export default function Home() {
         </View>
       )}
 
-      <TouchableOpacity
+      {/*<TouchableOpacity
         style={[styles.mainButton, { backgroundColor: colors.surfaceAlt }]}
         onPress={() => router.push("/tournaments")}
       >
         <Ionicons name="trophy-outline" size={36} color={colors.text} />
         <Text style={styles.mainButtonText}>My Tournaments</Text>
-      </TouchableOpacity>
+      </TouchableOpacity>*/}
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={[styles.smallButton, { backgroundColor: colors.surfaceAlt }]}
+          onPress={() => router.push("/tournaments")}
+        >
+          <Ionicons name="trophy-outline" size={28} color={colors.text} />
+          <Text style={styles.smallButtonText}>My Tournaments</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.smallButton, { backgroundColor: colors.surfaceAlt }]}
+          onPress={() => router.push("/tournaments/stats")}
+        >
+          <Ionicons name="stats-chart-outline" size={28} color={colors.text} />
+          <Text style={styles.smallButtonText}>Tournaments Stats</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.actionRow}>
         {/*<TouchableOpacity

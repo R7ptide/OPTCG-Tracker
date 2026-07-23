@@ -145,6 +145,14 @@ function LayoutContent() {
           name="tournaments/[id]"
           options={{ title: "Tournament" }}
         />
+        <Stack.Screen
+          name="tournaments/stats"
+          options={{ title: "Statistics" }}
+        />
+        <Stack.Screen
+          name="tournaments/search"
+          options={{ title: "Search Tournaments" }}
+        />
 
         {/*<Stack.Screen name="decks" options={{ title: "Deck Builder" }} />*/}
 

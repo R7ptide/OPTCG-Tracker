@@ -52,6 +52,27 @@ export const getTournaments = (): TournamentWithRecord[] => {
   `);
 };
 
+export const searchTournaments = (query: string): TournamentWithRecord[] => {
+  const needle = `%${query.trim()}%`;
+  return db.getAllSync<TournamentWithRecord>(
+    `
+    SELECT
+      t.*,
+      COALESCE(SUM(CASE WHEN m.result IN ('W', 'BYE') THEN 1 ELSE 0 END), 0) AS wins,
+      COALESCE(SUM(CASE WHEN m.result = 'L' THEN 1 ELSE 0 END), 0) AS losses,
+      COALESCE(SUM(CASE WHEN m.result = 'BYE' THEN 1 ELSE 0 END), 0) AS byes,
+      COUNT(m.id) AS totalMatches
+    FROM tournaments t
+    LEFT JOIN matches m ON m.tournament_id = t.id
+    LEFT JOIN cards c ON c.id = t.leader_id
+    WHERE t.title LIKE ? OR c.name LIKE ?
+    GROUP BY t.id
+    ORDER BY t.event_date DESC, t.created_at DESC, t.id DESC
+  `,
+    [needle, needle],
+  );
+};
+
 export const updateTournamentPlacement = (
   id: number,
   placement: number | null,
