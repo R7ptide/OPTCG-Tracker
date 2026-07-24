@@ -25,14 +25,14 @@ export default function TournamentSearch() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [dbVersion, setDbVersion] = useState(0);
+  const [dbVersion] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 200);
     return () => clearTimeout(timer);
   }, [query]);
 
-  const results = useMemo((): CollectionCard[] => {
+  const results = useMemo(() => {
     if (!debouncedQuery) return [];
 
     return searchTournaments(debouncedQuery);

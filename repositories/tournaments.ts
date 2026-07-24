@@ -1,4 +1,8 @@
-import db, { type MatchResult, type MatchRow, type TournamentRow } from "../database";
+import db, {
+  type MatchResult,
+  type MatchRow,
+  type TournamentRow,
+} from "../database";
 import { toDateString } from "../utils/date";
 
 export type NewTournament = {
@@ -35,18 +39,21 @@ export type TournamentWithRecord = TournamentRow & {
   losses: number;
   byes: number;
   totalMatches: number;
+  leaderName: string | null;
 };
 
 export const getTournaments = (): TournamentWithRecord[] => {
   return db.getAllSync<TournamentWithRecord>(`
     SELECT
       t.*,
+      c.name AS leaderName,
       COALESCE(SUM(CASE WHEN m.result IN ('W', 'BYE') THEN 1 ELSE 0 END), 0) AS wins,
       COALESCE(SUM(CASE WHEN m.result = 'L' THEN 1 ELSE 0 END), 0) AS losses,
       COALESCE(SUM(CASE WHEN m.result = 'BYE' THEN 1 ELSE 0 END), 0) AS byes,
       COUNT(m.id) AS totalMatches
     FROM tournaments t
     LEFT JOIN matches m ON m.tournament_id = t.id
+    LEFT JOIN cards c ON c.id = t.leader_id
     GROUP BY t.id
     ORDER BY t.event_date DESC, t.created_at DESC, t.id DESC
   `);
@@ -58,6 +65,7 @@ export const searchTournaments = (query: string): TournamentWithRecord[] => {
     `
     SELECT
       t.*,
+      c.name AS leaderName,
       COALESCE(SUM(CASE WHEN m.result IN ('W', 'BYE') THEN 1 ELSE 0 END), 0) AS wins,
       COALESCE(SUM(CASE WHEN m.result = 'L' THEN 1 ELSE 0 END), 0) AS losses,
       COALESCE(SUM(CASE WHEN m.result = 'BYE' THEN 1 ELSE 0 END), 0) AS byes,
