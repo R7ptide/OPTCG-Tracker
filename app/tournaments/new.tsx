@@ -18,19 +18,28 @@ import { useSettings } from "../_layout";
 import { createTournament } from "../../repositories/tournaments";
 import { type MasterCardRow } from "../../repositories/cards";
 import LeaderPicker from "../../components/LeaderPicker";
+import FormatPicker from "../../components/FormatPicker";
 import { toDateString, formatDateDisplay } from "../../utils/date";
 import { parsePlacementInput } from "../../utils/placement";
-import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
+import {
+  radius,
+  spacing,
+  typography,
+  type ThemeColors,
+} from "../../constants/theme";
 
 export default function NewTournament() {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [format, setFormat] = useState("");
   const [placement, setPlacement] = useState("");
   const [leader, setLeader] = useState<MasterCardRow | null>(null);
-  const [pickerVisible, setPickerVisible] = useState(false);
+
+  const [leaderPickerVisible, setLeaderPickerVisible] = useState(false);
+  const [formatPickerVisible, setFormatPickerVisible] = useState(false);
+
   const [eventDate, setEventDate] = useState(() => new Date());
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
@@ -51,6 +60,15 @@ export default function NewTournament() {
       return;
     }
 
+    const trimmedFormat = format.trim();
+    if (!trimmedFormat) {
+      Alert.alert(
+        "Format required",
+        "Please select a format for this tournament.",
+      );
+      return;
+    }
+
     const parsedPlacement = parsePlacementInput(placement);
     if (!parsedPlacement.ok) {
       Alert.alert(
@@ -62,7 +80,7 @@ export default function NewTournament() {
 
     const id = createTournament({
       title: trimmedTitle,
-      description: description.trim() || null,
+      format: trimmedFormat,
       leaderId: leader?.id ?? null,
       placement: parsedPlacement.value,
       eventDate: toDateString(eventDate),
@@ -88,11 +106,13 @@ export default function NewTournament() {
 
         <Text style={styles.label}>Date</Text>
         <TouchableOpacity
-          style={styles.dateSelector}
+          style={styles.selectorRow}
           onPress={() => setDatePickerVisible(true)}
         >
           <Ionicons name="calendar-outline" size={20} color={colors.accent} />
-          <Text style={styles.dateText}>{formatDateDisplay(toDateString(eventDate))}</Text>
+          <Text style={styles.selectorText}>
+            {formatDateDisplay(toDateString(eventDate))}
+          </Text>
         </TouchableOpacity>
         {datePickerVisible && (
           <DateTimePicker
@@ -105,20 +125,21 @@ export default function NewTournament() {
           />
         )}
 
-        <Text style={styles.label}>Description</Text>
-        <TextInput
-          style={[styles.input, styles.multilineInput]}
-          placeholder="Format, venue, notes..."
-          placeholderTextColor={colors.placeholder}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-        />
+        <Text style={styles.label}>Format</Text>
+        <TouchableOpacity
+          style={styles.selectorRow}
+          onPress={() => setFormatPickerVisible(true)}
+        >
+          <Text style={format ? styles.selectorText : styles.placeholderText}>
+            {format || "e.g. OP16, EB04, Legacy..."}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
 
         <Text style={styles.label}>Leader</Text>
         <TouchableOpacity
-          style={styles.leaderSelector}
-          onPress={() => setPickerVisible(true)}
+          style={styles.selectorRow}
+          onPress={() => setLeaderPickerVisible(true)}
         >
           {leader ? (
             <>
@@ -129,12 +150,16 @@ export default function NewTournament() {
                 style={styles.leaderThumb}
                 resizeMode="contain"
               />
-              <Text style={styles.leaderName}>{leader.name}</Text>
+              <Text style={styles.selectorText}>{leader.name}</Text>
             </>
           ) : (
             <>
-              <Ionicons name="add-circle-outline" size={24} color={colors.accent} />
-              <Text style={styles.leaderPlaceholder}>Choose your leader</Text>
+              <Ionicons
+                name="add-circle-outline"
+                size={24}
+                color={colors.accent}
+              />
+              <Text style={styles.placeholderText}>Choose your leader</Text>
             </>
           )}
         </TouchableOpacity>
@@ -155,11 +180,20 @@ export default function NewTournament() {
       </ScrollView>
 
       <LeaderPicker
-        visible={pickerVisible}
-        onClose={() => setPickerVisible(false)}
+        visible={leaderPickerVisible}
+        onClose={() => setLeaderPickerVisible(false)}
         onSelect={(selected) => {
           setLeader(selected);
-          setPickerVisible(false);
+          setLeaderPickerVisible(false);
+        }}
+      />
+
+      <FormatPicker
+        visible={formatPickerVisible}
+        onClose={() => setFormatPickerVisible(false)}
+        onSelect={(selectedFormat) => {
+          setFormat(selectedFormat);
+          setFormatPickerVisible(false);
         }}
       />
     </>
@@ -188,13 +222,10 @@ const createStyles = (colors: ThemeColors) =>
       paddingVertical: spacing.sm,
       fontSize: typography.sizes.md,
     },
-    multilineInput: {
-      minHeight: 80,
-      textAlignVertical: "top",
-    },
-    dateSelector: {
+    selectorRow: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "space-between",
       gap: spacing.sm,
       backgroundColor: colors.surface,
       borderRadius: radius.sm,
@@ -203,35 +234,21 @@ const createStyles = (colors: ThemeColors) =>
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
     },
-    dateText: {
+    selectorText: {
+      flex: 1,
       color: colors.text,
       fontSize: typography.sizes.md,
       fontWeight: "bold",
     },
-    leaderSelector: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-      backgroundColor: colors.surface,
-      borderRadius: radius.sm,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
+    placeholderText: {
+      flex: 1,
+      color: colors.textMuted,
+      fontSize: typography.sizes.md,
     },
     leaderThumb: {
       width: 40,
       height: 56,
       borderRadius: radius.sm,
-    },
-    leaderName: {
-      color: colors.text,
-      fontSize: typography.sizes.md,
-      fontWeight: "bold",
-    },
-    leaderPlaceholder: {
-      color: colors.textMuted,
-      fontSize: typography.sizes.md,
     },
     createButton: {
       backgroundColor: colors.primary,

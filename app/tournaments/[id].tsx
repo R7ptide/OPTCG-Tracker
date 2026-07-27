@@ -11,7 +11,12 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { router, Stack, useLocalSearchParams, useFocusEffect } from "expo-router";
+import {
+  router,
+  Stack,
+  useLocalSearchParams,
+  useFocusEffect,
+} from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,9 +37,19 @@ import {
 import { getCardById, type MasterCardRow } from "../../repositories/cards";
 import type { MatchResult, MatchRow, TournamentRow } from "../../database";
 import LeaderPicker from "../../components/LeaderPicker";
-import { toDateString, fromDateString, formatDateDisplay } from "../../utils/date";
+import FormatPicker from "../../components/FormatPicker";
+import {
+  toDateString,
+  fromDateString,
+  formatDateDisplay,
+} from "../../utils/date";
 import { parsePlacementInput } from "../../utils/placement";
-import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
+import {
+  radius,
+  spacing,
+  typography,
+  type ThemeColors,
+} from "../../constants/theme";
 
 const COLOR_HEX: Record<string, string> = {
   Red: "#ef4444",
@@ -135,7 +150,11 @@ export default function TournamentDetail() {
               onPress={() => setEditTournamentVisible(true)}
               style={styles.headerIcon}
             >
-              <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
+              <Ionicons
+                name="ellipsis-vertical"
+                size={22}
+                color={colors.text}
+              />
             </TouchableOpacity>
           ),
         }}
@@ -143,7 +162,9 @@ export default function TournamentDetail() {
 
       <View style={styles.summaryBox}>
         {leaderCard ? (
-          <View style={[styles.leaderImageWrap, { borderColor: leaderColorHex }]}>
+          <View
+            style={[styles.leaderImageWrap, { borderColor: leaderColorHex }]}
+          >
             <Image
               source={{ uri: cardImageUrl(leaderCard.id) }}
               style={styles.leaderImage}
@@ -183,11 +204,9 @@ export default function TournamentDetail() {
           <Text style={styles.tournamentDate}>
             {formatDateDisplay(tournament.event_date)}
           </Text>
-          {tournament.description && (
-            <Text style={styles.tournamentDesc} numberOfLines={4}>
-              {tournament.description}
-            </Text>
-          )}
+          <View style={styles.formatChip}>
+            <Text style={styles.formatChipText}>{tournament.format}</Text>
+          </View>
         </View>
       </View>
 
@@ -207,8 +226,14 @@ export default function TournamentDetail() {
             <Text style={styles.matchIndex}>{index + 1}</Text>
 
             {item.result === "BYE" ? (
-              <View style={[styles.opponentThumb, styles.opponentThumbPlaceholder]}>
-                <Ionicons name="remove-outline" size={18} color={colors.textMuted} />
+              <View
+                style={[styles.opponentThumb, styles.opponentThumbPlaceholder]}
+              >
+                <Ionicons
+                  name="remove-outline"
+                  size={18}
+                  color={colors.textMuted}
+                />
               </View>
             ) : item.opponent ? (
               <Image
@@ -217,8 +242,14 @@ export default function TournamentDetail() {
                 resizeMode="cover"
               />
             ) : (
-              <View style={[styles.opponentThumb, styles.opponentThumbPlaceholder]}>
-                <Ionicons name="help-outline" size={18} color={colors.textMuted} />
+              <View
+                style={[styles.opponentThumb, styles.opponentThumbPlaceholder]}
+              >
+                <Ionicons
+                  name="help-outline"
+                  size={18}
+                  color={colors.textMuted}
+                />
               </View>
             )}
 
@@ -236,6 +267,23 @@ export default function TournamentDetail() {
                 </Text>
               )}
             </View>
+
+            {item.dice_roll != null && (
+              <View
+                style={[
+                  styles.turnBadge,
+                  item.dice_roll
+                    ? styles.resultBadgeWin
+                    : styles.resultBadgeLoss,
+                ]}
+              >
+                <Ionicons
+                  name="dice"
+                  size={14}
+                  color={item.dice_roll ? COLOR_HEX.Green : COLOR_HEX.Red}
+                />
+              </View>
+            )}
 
             {item.went_first != null && (
               <View style={styles.turnBadge}>
@@ -259,7 +307,11 @@ export default function TournamentDetail() {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="game-controller-outline" size={40} color={colors.textMuted} />
+            <Ionicons
+              name="game-controller-outline"
+              size={40}
+              color={colors.textMuted}
+            />
             <Text style={styles.emptyText}>
               No matches logged yet. Add your first round below.
             </Text>
@@ -267,7 +319,9 @@ export default function TournamentDetail() {
         }
       />
 
-      <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
+      <View
+        style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}
+      >
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => {
@@ -364,7 +418,12 @@ function PlacementModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <View style={styles.placementOverlay}>
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.placementModalContent}>
@@ -417,7 +476,7 @@ function EditTournamentModal({
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [title, setTitle] = useState(tournament.title);
-  const [description, setDescription] = useState(tournament.description ?? "");
+  const [format, setFormat] = useState(tournament.format ?? "");
   const [placement, setPlacement] = useState(
     tournament.placement != null ? String(tournament.placement) : "",
   );
@@ -427,7 +486,8 @@ function EditTournamentModal({
   const [eventDate, setEventDate] = useState(() =>
     fromDateString(tournament.event_date),
   );
-  const [pickerVisible, setPickerVisible] = useState(false);
+  const [leaderPickerVisible, setLeaderPickerVisible] = useState(false);
+  const [formatPickerVisible, setFormatPickerVisible] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   const handleDateChange = (
@@ -447,6 +507,15 @@ function EditTournamentModal({
       return;
     }
 
+    const trimmedFormat = format.trim();
+    if (!trimmedFormat) {
+      Alert.alert(
+        "Format required",
+        "Please select a format for this tournament.",
+      );
+      return;
+    }
+
     const parsedPlacement = parsePlacementInput(placement);
     if (!parsedPlacement.ok) {
       Alert.alert(
@@ -458,7 +527,7 @@ function EditTournamentModal({
 
     updateTournament(tournament.id, {
       title: trimmedTitle,
-      description: description.trim() || null,
+      format: trimmedFormat,
       leaderId: leader?.id ?? null,
       placement: parsedPlacement.value,
       eventDate: toDateString(eventDate),
@@ -506,7 +575,7 @@ function EditTournamentModal({
 
           <Text style={styles.label}>Date</Text>
           <TouchableOpacity
-            style={styles.leaderSelector}
+            style={styles.selectorRow}
             onPress={() => setDatePickerVisible(true)}
           >
             <Ionicons name="calendar-outline" size={20} color={colors.accent} />
@@ -525,20 +594,21 @@ function EditTournamentModal({
             />
           )}
 
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.multilineInput]}
-            placeholder="Format, venue, notes..."
-            placeholderTextColor={colors.placeholder}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-          />
+          <Text style={styles.label}>Format</Text>
+          <TouchableOpacity
+            style={styles.selectorRow}
+            onPress={() => setFormatPickerVisible(true)}
+          >
+            <Text style={format ? styles.selectorText : styles.placeholderText}>
+              {format || "e.g. OP16, EB04, Legacy..."}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
 
           <Text style={styles.label}>Leader</Text>
           <TouchableOpacity
-            style={styles.leaderSelector}
-            onPress={() => setPickerVisible(true)}
+            style={styles.selectorRow}
+            onPress={() => setLeaderPickerVisible(true)}
           >
             {leader ? (
               <>
@@ -547,11 +617,15 @@ function EditTournamentModal({
                   style={styles.leaderThumbSmall}
                   resizeMode="cover"
                 />
-                <Text style={styles.leaderName}>{leader.name}</Text>
+                <Text style={styles.placeholderText}>{leader.name}</Text>
               </>
             ) : (
               <>
-                <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+                <Ionicons
+                  name="add-circle-outline"
+                  size={22}
+                  color={colors.accent}
+                />
                 <Text style={styles.leaderPlaceholder}>Choose your leader</Text>
               </>
             )}
@@ -578,11 +652,20 @@ function EditTournamentModal({
       </View>
 
       <LeaderPicker
-        visible={pickerVisible}
-        onClose={() => setPickerVisible(false)}
+        visible={leaderPickerVisible}
+        onClose={() => setLeaderPickerVisible(false)}
         onSelect={(selected) => {
           setLeader(selected);
-          setPickerVisible(false);
+          setLeaderPickerVisible(false);
+        }}
+      />
+
+      <FormatPicker
+        visible={formatPickerVisible}
+        onClose={() => setFormatPickerVisible(false)}
+        onSelect={(selectedFormat) => {
+          setFormat(selectedFormat);
+          setFormatPickerVisible(false);
         }}
       />
     </Modal>
@@ -616,9 +699,8 @@ function MatchModal({
   const [result, setResult] = useState<MatchResult>(
     existingMatch?.result ?? "W",
   );
-  const [wentFirst, setWentFirst] = useState(
-    existingMatch?.went_first !== 0,
-  );
+  const [diceRoll, setDiceRoll] = useState(existingMatch?.dice_roll !== 0);
+  const [wentFirst, setWentFirst] = useState(existingMatch?.went_first !== 0);
   const [comment, setComment] = useState(existingMatch?.comment ?? "");
   const [pickerVisible, setPickerVisible] = useState(false);
 
@@ -629,8 +711,9 @@ function MatchModal({
     }
 
     const payload = {
-      opponentLeaderId: result === "BYE" ? null : opponent?.id ?? null,
+      opponentLeaderId: result === "BYE" ? null : (opponent?.id ?? null),
       result,
+      diceRoll: result === "BYE" ? null : diceRoll,
       wentFirst: result === "BYE" ? null : wentFirst,
       comment: comment.trim() || null,
     };
@@ -645,28 +728,26 @@ function MatchModal({
 
   const handleDelete = () => {
     if (!existingMatch) return;
-    Alert.alert(
-      "Delete match?",
-      "This can't be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deleteMatch(existingMatch.id);
-            onDeleted();
-          },
+    Alert.alert("Delete match?", "This can't be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          deleteMatch(existingMatch.id);
+          onDeleted();
         },
-      ],
-    );
+      },
+    ]);
   };
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>{isEditing ? "Edit Match" : "Add Match"}</Text>
+          <Text style={styles.title}>
+            {isEditing ? "Edit Match" : "Add Match"}
+          </Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -700,7 +781,7 @@ function MatchModal({
             <>
               <Text style={styles.label}>Opponent Leader</Text>
               <TouchableOpacity
-                style={styles.leaderSelector}
+                style={styles.selectorRow}
                 onPress={() => setPickerVisible(true)}
               >
                 {opponent ? (
@@ -714,11 +795,53 @@ function MatchModal({
                   </>
                 ) : (
                   <>
-                    <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
-                    <Text style={styles.leaderPlaceholder}>Choose opponent leader</Text>
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={22}
+                      color={colors.accent}
+                    />
+                    <Text style={styles.leaderPlaceholder}>
+                      Choose opponent leader
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
+
+              <Text style={styles.label}>Dice Roll</Text>
+              <View style={styles.resultOptionsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.resultOption,
+                    diceRoll && styles.resultOptionActive,
+                  ]}
+                  onPress={() => setDiceRoll(true)}
+                >
+                  <Text
+                    style={[
+                      styles.resultOptionText,
+                      diceRoll && styles.resultOptionTextActive,
+                    ]}
+                  >
+                    Won Dice
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.resultOption,
+                    !diceRoll && styles.resultOptionActive,
+                  ]}
+                  onPress={() => setDiceRoll(false)}
+                >
+                  <Text
+                    style={[
+                      styles.resultOptionText,
+                      !diceRoll && styles.resultOptionTextActive,
+                    ]}
+                  >
+                    Lost Dice
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               <Text style={styles.label}>Turn Order</Text>
               <View style={styles.resultOptionsRow}>
@@ -861,11 +984,17 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: "bold",
       textAlign: "right",
     },
-    tournamentDesc: {
-      color: colors.textMuted,
-      fontSize: typography.sizes.xs,
-      textAlign: "right",
+    formatChip: {
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
       marginTop: spacing.xs,
+    },
+    formatChipText: {
+      color: colors.text,
+      fontSize: typography.sizes.xs,
+      fontWeight: "bold",
     },
     list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
     matchRow: {
@@ -1007,9 +1136,10 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: "bold",
     },
     resultOptionTextActive: { color: "#fff" },
-    leaderSelector: {
+    selectorRow: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "space-between",
       gap: spacing.sm,
       backgroundColor: colors.surface,
       borderRadius: radius.sm,
@@ -1017,6 +1147,17 @@ const createStyles = (colors: ThemeColors) =>
       borderColor: colors.border,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
+    },
+    selectorText: {
+      flex: 1,
+      color: colors.text,
+      fontSize: typography.sizes.md,
+      fontWeight: "bold",
+    },
+    placeholderText: {
+      flex: 1,
+      color: colors.textMuted,
+      fontSize: typography.sizes.md,
     },
     leaderThumbSmall: { width: 32, height: 45, borderRadius: radius.sm },
     leaderName: {

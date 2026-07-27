@@ -97,6 +97,7 @@ export default function TournamentList() {
                 {item.leaderName ? ` · ${item.leaderName}` : ""}
               </Text>
               <View style={styles.recordRow}>
+                <Text style={styles.formatText}>{item.format}</Text>
                 <Text style={styles.recordText}>
                   {item.wins}W - {item.losses}L
                 </Text>
@@ -185,6 +186,11 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: "center",
       gap: spacing.sm,
       marginTop: spacing.xs,
+    },
+    formatText: {
+      color: colors.text,
+      fontSize: typography.sizes.sm,
+      fontWeight: "bold",
     },
     recordText: {
       color: colors.accent,

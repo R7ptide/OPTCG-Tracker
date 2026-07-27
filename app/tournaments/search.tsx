@@ -97,6 +97,7 @@ export default function TournamentSearch() {
                 {item.leaderName ? ` · ${item.leaderName}` : ""}
               </Text>
               <View style={styles.recordRow}>
+                <Text style={styles.formatText}>{item.format}</Text>
                 <Text style={styles.recordText}>
                   {item.wins}W - {item.losses}L
                 </Text>
@@ -114,7 +115,7 @@ export default function TournamentSearch() {
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          <Text style={styles.empty}>
+          <Text style={styles.emptyText}>
             {debouncedQuery
               ? "No Tournaments found."
               : "Type a Tournament name or a Leader card to search your Tournaments."}
@@ -186,6 +187,11 @@ const createStyles = (colors: ThemeColors) =>
       gap: spacing.sm,
       marginTop: spacing.xs,
     },
+    formatText: {
+      color: colors.text,
+      fontSize: typography.sizes.sm,
+      fontWeight: "bold",
+    },
     recordText: {
       color: colors.accent,
       fontSize: typography.sizes.sm,
@@ -196,15 +202,10 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: typography.sizes.sm,
       fontWeight: "bold",
     },
-    empty: {
-      alignItems: "center",
-      marginTop: spacing.xxl * 2,
-      gap: spacing.sm,
-      paddingHorizontal: spacing.xl,
-    },
     emptyText: {
       color: colors.textMuted,
       fontSize: typography.sizes.md,
       textAlign: "center",
+      marginTop: 50,
     },
   });
