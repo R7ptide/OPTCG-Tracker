@@ -5,6 +5,7 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import { router, useFocusEffect, Stack } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -40,12 +41,29 @@ export default function TournamentList() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
+  const [selectedFormat, setSelectedFormat] = useState<string>("All");
 
   useFocusEffect(
     useCallback(() => {
       setTournaments(loadTournaments());
     }, []),
   );
+
+  const availableFormats = useMemo(() => {
+    const formats = Array.from(new Set(tournaments.map((t) => t.format)));
+    formats.sort((a, b) => {
+      if (a === "Legacy") return -1;
+      if (b === "Legacy") return 1;
+      return b.localeCompare(a);
+    });
+
+    return ["All", ...formats];
+  }, [tournaments]);
+
+  const filteredTournaments = useMemo(() => {
+    if (selectedFormat === "All") return tournaments;
+    return tournaments.filter((t) => t.format === selectedFormat);
+  }, [tournaments, selectedFormat]);
 
   return (
     <View style={styles.container}>
@@ -62,8 +80,45 @@ export default function TournamentList() {
         }}
       />
 
+      {tournaments.length > 0 && (
+        <View style={styles.filterWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterScroll}
+          >
+            {availableFormats.map((format) => {
+              const isSelected = format === selectedFormat;
+              return (
+                <TouchableOpacity
+                  key={format}
+                  onPress={() => setSelectedFormat(format)}
+                  style={[
+                    styles.filterChip,
+                    isSelected
+                      ? styles.filterChipSelected
+                      : styles.filterChipUnselected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      isSelected
+                        ? styles.filterTextSelected
+                        : styles.filterTextUnselected,
+                    ]}
+                  >
+                    {format}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
       <FlatList
-        data={tournaments}
+        data={filteredTournaments}
         keyExtractor={(item) => String(item.id)}
         style={styles.flatList}
         contentContainerStyle={styles.list}
@@ -231,5 +286,42 @@ const createStyles = (colors: ThemeColors) =>
       color: "#fff",
       fontSize: typography.sizes.lg,
       fontWeight: "bold",
+    },
+    filterWrapper: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    filterScroll: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+    },
+    filterChip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    filterChipSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterChipUnselected: {
+      backgroundColor: "transparent",
+      borderColor: colors.border,
+    },
+    filterText: {
+      fontSize: typography.sizes.sm,
+    },
+    filterTextSelected: {
+      color: "#fff",
+      fontWeight: "bold",
+    },
+    filterTextUnselected: {
+      color: colors.textMuted,
+      fontWeight: "500",
     },
   });
