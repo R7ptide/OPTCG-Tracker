@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Image,
 } from "react-native";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 //import { Ionicons } from "@expo/vector-icons";
 import {
@@ -56,10 +56,6 @@ export default function StatisticsMenu() {
   const [activeTab, setActiveTab] = useState<Tab>("over");
   const [selectedFormat, setSelectedFormat] = useState<string>("All");
   const [selectedLeader, setSelectedLeader] = useState<string>("All");
-
-  useEffect(() => {
-    setSelectedLeader("All");
-  }, [selectedFormat]);
 
   useFocusEffect(
     useCallback(() => {
@@ -197,15 +193,19 @@ export default function StatisticsMenu() {
         else totalLosses++;
 
         if (m.went_first === 1) {
-          isWin ? firstWins++ : firstLosses++;
+          if (isWin) firstWins++;
+          else firstLosses++;
         } else if (m.went_first === 0) {
-          isWin ? secondWins++ : secondLosses++;
+          if (isWin) secondWins++;
+          else secondLosses++;
         }
 
         if (m.dice_roll === 1) {
-          isWin ? diceWonWins++ : diceWonLosses++;
+          if (isWin) diceWonWins++;
+          else diceWonLosses++;
         } else if (m.dice_roll === 0) {
-          isWin ? diceLostWins++ : diceLostLosses++;
+          if (isWin) diceLostWins++;
+          else diceLostLosses++;
         }
 
         if (m.opponent_leader_id) {
@@ -224,13 +224,11 @@ export default function StatisticsMenu() {
           else matchups[m.opponent_leader_id].losses++;
 
           if (m.went_first === 1) {
-            isWin
-              ? matchups[m.opponent_leader_id].firstWins++
-              : matchups[m.opponent_leader_id].firstLosses++;
+            if (isWin) matchups[m.opponent_leader_id].firstWins++;
+            else matchups[m.opponent_leader_id].firstLosses++;
           } else if (m.went_first === 0) {
-            isWin
-              ? matchups[m.opponent_leader_id].secondWins++
-              : matchups[m.opponent_leader_id].secondLosses++;
+            if (isWin) matchups[m.opponent_leader_id].secondWins++;
+            else matchups[m.opponent_leader_id].secondLosses++;
           }
         }
       });
@@ -324,7 +322,10 @@ export default function StatisticsMenu() {
               return (
                 <TouchableOpacity
                   key={format}
-                  onPress={() => setSelectedFormat(format)}
+                  onPress={() => {
+                    setSelectedFormat(format);
+                    setSelectedLeader("All");
+                  }}
                   style={[
                     styles.filterChip,
                     isSelected

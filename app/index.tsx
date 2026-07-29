@@ -193,7 +193,7 @@ export default function Home() {
 
         <TouchableOpacity
           style={styles.smallButton}
-          onPress={() => router.push("/settings")}
+          onPress={() => router.push("/settings/settings")}
         >
           <Ionicons name="settings-outline" size={28} color={colors.text} />
           <Text style={styles.smallButtonText}>Settings</Text>
