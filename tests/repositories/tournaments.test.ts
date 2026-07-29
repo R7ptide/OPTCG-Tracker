@@ -4,6 +4,7 @@ import {
   createTournament,
   getTournamentById,
   getTournaments,
+  searchTournaments,
   updateTournamentPlacement,
   updateTournament,
   deleteTournament,
@@ -12,24 +13,44 @@ import {
   updateMatch,
   deleteMatch,
 } from "../../repositories/tournaments";
+import { upsertCards } from "../../repositories/cards";
+import type { CardRow } from "../../database";
+
+const makeCard = (overrides: Partial<CardRow> & { id: string }): CardRow => ({
+  name: null,
+  color: null,
+  type: null,
+  cost: null,
+  power: null,
+  attribute: null,
+  rarity: null,
+  image_url: null,
+  set_id: null,
+  ...overrides,
+});
 
 beforeAll(() => {
   initDB();
 });
 
 beforeEach(() => {
-  db.execSync("DELETE FROM matches; DELETE FROM tournaments;");
+  db.execSync(
+    "DELETE FROM matches; DELETE FROM tournaments; DELETE FROM cards;",
+  );
 });
 
 describe("createTournament / getTournamentById", () => {
   it("creates a tournament with defaults for optional fields", () => {
-    const id = createTournament({ title: "Local Store Event" });
+    const id = createTournament({
+      title: "Local Store Event",
+      format: "Legacy",
+    });
     const tournament = getTournamentById(id);
 
     expect(tournament).toMatchObject({
       id,
       title: "Local Store Event",
-      description: null,
+      format: "Legacy",
       leader_id: null,
       placement: null,
     });
@@ -38,14 +59,14 @@ describe("createTournament / getTournamentById", () => {
   it("stores optional fields when provided", () => {
     const id = createTournament({
       title: "Regional Qualifier",
-      description: "Swiss rounds, top 8 cut",
+      format: "Legacy",
       leaderId: "OP01-001",
       placement: 2,
     });
 
     expect(getTournamentById(id)).toMatchObject({
       title: "Regional Qualifier",
-      description: "Swiss rounds, top 8 cut",
+      format: "Legacy",
       leader_id: "OP01-001",
       placement: 2,
     });
@@ -56,7 +77,7 @@ describe("createTournament / getTournamentById", () => {
   });
 
   it("defaults event_date to today when not provided", () => {
-    const id = createTournament({ title: "No Date Given" });
+    const id = createTournament({ title: "No Date Given", format: "Legacy" });
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     expect(getTournamentById(id)).toMatchObject({ event_date: today });
@@ -65,6 +86,7 @@ describe("createTournament / getTournamentById", () => {
   it("stores an explicit event_date for backfilled entries", () => {
     const id = createTournament({
       title: "Forgot to Log This One",
+      format: "Legacy",
       eventDate: "2024-03-01",
     });
     expect(getTournamentById(id)).toMatchObject({ event_date: "2024-03-01" });
@@ -73,19 +95,27 @@ describe("createTournament / getTournamentById", () => {
 
 describe("updateTournamentPlacement", () => {
   it("sets the placement on an existing tournament", () => {
-    const id = createTournament({ title: "Cup G" });
+    const id = createTournament({ title: "Cup G", format: "Legacy" });
     updateTournamentPlacement(id, 1);
     expect(getTournamentById(id)).toMatchObject({ placement: 1 });
   });
 
   it("overwrites a previously set placement", () => {
-    const id = createTournament({ title: "Cup H", placement: 4 });
+    const id = createTournament({
+      title: "Cup H",
+      format: "Legacy",
+      placement: 4,
+    });
     updateTournamentPlacement(id, 11);
     expect(getTournamentById(id)).toMatchObject({ placement: 11 });
   });
 
   it("clears the placement when set to null", () => {
-    const id = createTournament({ title: "Cup I", placement: 2 });
+    const id = createTournament({
+      title: "Cup I",
+      format: "Legacy",
+      placement: 2,
+    });
     updateTournamentPlacement(id, null);
     expect(getTournamentById(id)).toMatchObject({ placement: null });
   });
@@ -95,7 +125,7 @@ describe("updateTournament", () => {
   it("overwrites all editable fields", () => {
     const id = createTournament({
       title: "Original Title",
-      description: "Original description",
+      format: "Legacy",
       leaderId: "OP01-001",
       placement: 3,
       eventDate: "2024-01-01",
@@ -103,7 +133,7 @@ describe("updateTournament", () => {
 
     updateTournament(id, {
       title: "Corrected Title",
-      description: "Corrected description",
+      format: "OP-01",
       leaderId: "OP02-001",
       placement: 1,
       eventDate: "2024-02-15",
@@ -111,7 +141,7 @@ describe("updateTournament", () => {
 
     expect(getTournamentById(id)).toMatchObject({
       title: "Corrected Title",
-      description: "Corrected description",
+      format: "OP-01",
       leader_id: "OP02-001",
       placement: 1,
       event_date: "2024-02-15",
@@ -121,21 +151,20 @@ describe("updateTournament", () => {
   it("clears optional fields when set to null", () => {
     const id = createTournament({
       title: "Cup M",
-      description: "Has a description",
+      format: "Legacy",
       leaderId: "OP01-001",
       placement: 2,
     });
 
     updateTournament(id, {
       title: "Cup M",
-      description: null,
+      format: "Legacy",
       leaderId: null,
       placement: null,
       eventDate: "2024-03-01",
     });
 
     expect(getTournamentById(id)).toMatchObject({
-      description: null,
       leader_id: null,
       placement: null,
     });
@@ -144,7 +173,7 @@ describe("updateTournament", () => {
 
 describe("deleteTournament", () => {
   it("removes the tournament and cascades to its matches", () => {
-    const id = createTournament({ title: "Cup N" });
+    const id = createTournament({ title: "Cup N", format: "Legacy" });
     addMatch({ tournamentId: id, result: "W" });
     addMatch({ tournamentId: id, result: "L" });
 
@@ -155,8 +184,8 @@ describe("deleteTournament", () => {
   });
 
   it("leaves other tournaments untouched", () => {
-    const keep = createTournament({ title: "Keep Me" });
-    const remove = createTournament({ title: "Remove Me" });
+    const keep = createTournament({ title: "Keep Me", format: "Legacy" });
+    const remove = createTournament({ title: "Remove Me", format: "Legacy" });
 
     deleteTournament(remove);
 
@@ -167,7 +196,7 @@ describe("deleteTournament", () => {
 
 describe("getTournaments", () => {
   it("counts a BYE as a win in the record, while tracking it separately too", () => {
-    const id = createTournament({ title: "Cup A" });
+    const id = createTournament({ title: "Cup A", format: "Legacy" });
     addMatch({ tournamentId: id, result: "W" });
     addMatch({ tournamentId: id, result: "W" });
     addMatch({ tournamentId: id, result: "L" });
@@ -184,7 +213,7 @@ describe("getTournaments", () => {
   });
 
   it("returns a zeroed record for a tournament with no matches yet", () => {
-    createTournament({ title: "Fresh Cup" });
+    createTournament({ title: "Fresh Cup", format: "Legacy" });
 
     const [tournament] = getTournaments();
     expect(tournament).toMatchObject({
@@ -196,8 +225,8 @@ describe("getTournaments", () => {
   });
 
   it("orders tournaments newest first when logged in order", () => {
-    const first = createTournament({ title: "Older" });
-    const second = createTournament({ title: "Newer" });
+    const first = createTournament({ title: "Older", format: "Legacy" });
+    const second = createTournament({ title: "Newer", format: "Legacy" });
 
     const ids = getTournaments().map((t) => t.id);
     expect(ids.indexOf(second)).toBeLessThan(ids.indexOf(first));
@@ -206,10 +235,12 @@ describe("getTournaments", () => {
   it("orders by event_date rather than logging order, for backfilled entries", () => {
     const loggedFirstButEarlier = createTournament({
       title: "Backfilled",
+      format: "Legacy",
       eventDate: "2024-01-01",
     });
     const loggedSecondButRecent = createTournament({
       title: "Actually Recent",
+      format: "Legacy",
       eventDate: "2025-06-15",
     });
 
@@ -222,7 +253,7 @@ describe("getTournaments", () => {
 
 describe("addMatch / getMatchesForTournament", () => {
   it("stores match details and coerces went_first to 0/1", () => {
-    const id = createTournament({ title: "Cup B" });
+    const id = createTournament({ title: "Cup B", format: "Legacy" });
     addMatch({
       tournamentId: id,
       opponentLeaderId: "OP02-001",
@@ -253,7 +284,7 @@ describe("addMatch / getMatchesForTournament", () => {
   });
 
   it("allows a BYE match with no opponent or went_first", () => {
-    const id = createTournament({ title: "Cup C" });
+    const id = createTournament({ title: "Cup C", format: "Legacy" });
     addMatch({ tournamentId: id, result: "BYE" });
 
     const [match] = getMatchesForTournament(id);
@@ -265,7 +296,7 @@ describe("addMatch / getMatchesForTournament", () => {
   });
 
   it("returns matches in creation order", () => {
-    const id = createTournament({ title: "Cup D" });
+    const id = createTournament({ title: "Cup D", format: "Legacy" });
     const first = addMatch({ tournamentId: id, result: "W" });
     const second = addMatch({ tournamentId: id, result: "L" });
 
@@ -274,8 +305,8 @@ describe("addMatch / getMatchesForTournament", () => {
   });
 
   it("scopes matches to their own tournament", () => {
-    const idA = createTournament({ title: "Cup E" });
-    const idB = createTournament({ title: "Cup F" });
+    const idA = createTournament({ title: "Cup E", format: "Legacy" });
+    const idB = createTournament({ title: "Cup F", format: "Legacy" });
     addMatch({ tournamentId: idA, result: "W" });
     addMatch({ tournamentId: idB, result: "L" });
 
@@ -286,7 +317,7 @@ describe("addMatch / getMatchesForTournament", () => {
 
 describe("updateMatch", () => {
   it("overwrites result, opponent, turn order, and comment", () => {
-    const id = createTournament({ title: "Cup J" });
+    const id = createTournament({ title: "Cup J", format: "Legacy" });
     const matchId = addMatch({
       tournamentId: id,
       opponentLeaderId: "OP01-001",
@@ -299,6 +330,7 @@ describe("updateMatch", () => {
       opponentLeaderId: "OP02-001",
       result: "L",
       wentFirst: false,
+      diceRoll: null,
       comment: "corrected note",
     });
 
@@ -312,7 +344,7 @@ describe("updateMatch", () => {
   });
 
   it("can convert a match to a BYE, clearing opponent and turn order", () => {
-    const id = createTournament({ title: "Cup K" });
+    const id = createTournament({ title: "Cup K", format: "Legacy" });
     const matchId = addMatch({
       tournamentId: id,
       opponentLeaderId: "OP01-001",
@@ -320,7 +352,7 @@ describe("updateMatch", () => {
       wentFirst: true,
     });
 
-    updateMatch(matchId, { result: "BYE" });
+    updateMatch(matchId, { result: "BYE", diceRoll: null });
 
     const [match] = getMatchesForTournament(id);
     expect(match).toMatchObject({
@@ -333,7 +365,7 @@ describe("updateMatch", () => {
 
 describe("deleteMatch", () => {
   it("removes only the targeted match", () => {
-    const id = createTournament({ title: "Cup L" });
+    const id = createTournament({ title: "Cup L", format: "Legacy" });
     const keep = addMatch({ tournamentId: id, result: "W" });
     const remove = addMatch({ tournamentId: id, result: "L" });
 
@@ -341,5 +373,73 @@ describe("deleteMatch", () => {
 
     const matches = getMatchesForTournament(id);
     expect(matches.map((m) => m.id)).toEqual([keep]);
+  });
+});
+
+describe("searchTournaments", () => {
+  beforeEach(() => {
+    upsertCards([
+      makeCard({ id: "OP01-001", name: "Monkey D. Luffy", type: "Leader" }),
+      makeCard({ id: "OP02-001", name: "Roronoa Zoro", type: "Leader" }),
+    ]);
+  });
+
+  it("matches by tournament title", () => {
+    const match = createTournament({
+      title: "Regional Qualifier",
+      format: "Legacy",
+    });
+    createTournament({ title: "Local Store Event", format: "Legacy" });
+
+    const results = searchTournaments("regional");
+    expect(results.map((t) => t.id)).toEqual([match]);
+  });
+
+  it("matches by leader name, case-insensitively", () => {
+    const match = createTournament({
+      title: "Cup A",
+      format: "Legacy",
+      leaderId: "OP01-001",
+    });
+    createTournament({
+      title: "Cup B",
+      format: "Legacy",
+      leaderId: "OP02-001",
+    });
+
+    const results = searchTournaments("luffy");
+    expect(results.map((t) => t.id)).toEqual([match]);
+  });
+
+  it("returns no results when nothing matches", () => {
+    createTournament({
+      title: "Cup C",
+      format: "Legacy",
+      leaderId: "OP01-001",
+    });
+    expect(searchTournaments("nonexistent")).toHaveLength(0);
+  });
+
+  it("returns everything for an empty query", () => {
+    const a = createTournament({ title: "Cup D", format: "Legacy" });
+    const b = createTournament({ title: "Cup E", format: "Legacy" });
+    expect(
+      searchTournaments("")
+        .map((t) => t.id)
+        .sort(),
+    ).toEqual([a, b].sort());
+  });
+
+  it("still computes the win/loss record for matched tournaments", () => {
+    const id = createTournament({
+      title: "Cup F",
+      format: "Legacy",
+      leaderId: "OP01-001",
+    });
+    addMatch({ tournamentId: id, result: "W" });
+    addMatch({ tournamentId: id, result: "L" });
+
+    const [result] = searchTournaments("luffy");
+    expect(result).toMatchObject({ wins: 1, losses: 1 });
   });
 });

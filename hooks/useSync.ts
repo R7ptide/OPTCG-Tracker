@@ -30,18 +30,20 @@ export const useSync = () => {
         `Downloaded ${cardEntries.length} cards. Updating database...`,
       );
 
-      const cards: CardRow[] = cardEntries.map(([cardId, card]) => ({
-        id: cardId,
-        name: card.name ?? "Unknown",
-        color: card.colors ? card.colors.join("/") : "",
-        type: card.category ?? "",
-        cost: card.cost ?? 0,
-        power: card.power ?? 0,
-        attribute: card.attributes ? card.attributes.join("/") : "",
-        rarity: card.rarity ?? "",
-        image_url: card.img_full_url ?? "",
-        set_id: cardId.split("-")[0],
-      }));
+      const cards: CardRow[] = cardEntries
+        .filter(([cardId]) => !cardId.includes("_r"))
+        .map(([cardId, card]) => ({
+          id: cardId,
+          name: card.name ?? "Unknown",
+          color: card.colors ? card.colors.join("/") : "",
+          type: card.category ?? "",
+          cost: card.cost ?? 0,
+          power: card.power ?? 0,
+          attribute: card.attributes ? card.attributes.join("/") : "",
+          rarity: card.rarity ?? "",
+          image_url: card.img_full_url ?? "",
+          set_id: cardId.split("-")[0],
+        }));
 
       upsertCards(cards);
 

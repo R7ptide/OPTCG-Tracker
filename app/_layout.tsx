@@ -145,10 +145,25 @@ function LayoutContent() {
           name="tournaments/[id]"
           options={{ title: "Tournament" }}
         />
+        <Stack.Screen
+          name="tournaments/stats"
+          options={{ title: "Statistics" }}
+        />
+        <Stack.Screen
+          name="tournaments/search"
+          options={{ title: "Search Tournaments" }}
+        />
 
         {/*<Stack.Screen name="decks" options={{ title: "Deck Builder" }} />*/}
 
-        <Stack.Screen name="settings" options={{ title: "Settings" }} />
+        <Stack.Screen
+          name="settings/settings"
+          options={{ title: "Settings" }}
+        />
+        <Stack.Screen
+          name="settings/whats-new"
+          options={{ title: "What's New?" }}
+        />
       </Stack>
     </SettingsContext.Provider>
   );

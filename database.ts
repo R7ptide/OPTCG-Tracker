@@ -24,7 +24,7 @@ export type CollectionRow = {
 export type TournamentRow = {
   id: number;
   title: string;
-  description: string | null;
+  format: string;
   leader_id: string | null;
   placement: number | null;
   event_date: string;
@@ -38,6 +38,7 @@ export type MatchRow = {
   tournament_id: number;
   opponent_leader_id: string | null;
   result: MatchResult;
+  dice_roll: number | null;
   went_first: number | null;
   comment: string | null;
   created_at: string;
@@ -82,9 +83,9 @@ const MIGRATIONS: Migration[] = [
       CREATE TABLE IF NOT EXISTS tournaments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
-        description TEXT,
         leader_id TEXT,
         placement INTEGER,
+        event_date TEXT NOT NULL DEFAULT CURRENT_DATE,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -100,39 +101,20 @@ const MIGRATIONS: Migration[] = [
       );
     `);
   },
-  // One-time fixup: devices that ran the previous migration mid-development
-  // ended up with a `tournaments` table missing `created_at`. Safe to drop —
-  // this feature has no real user data yet.
   (db) => {
-    db.execSync(`
-      DROP TABLE IF EXISTS matches;
-      DROP TABLE IF EXISTS tournaments;
-
-      CREATE TABLE tournaments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        description TEXT,
-        leader_id TEXT,
-        placement INTEGER,
-        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    try {
+      db.execSync(
+        `ALTER TABLE tournaments ADD COLUMN format TEXT NOT NULL DEFAULT 'Legacy';`,
       );
+    } catch (e) {
+      console.log("[Database] format column already exists, skipping...");
+    }
 
-      CREATE TABLE matches (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        tournament_id INTEGER NOT NULL,
-        opponent_leader_id TEXT,
-        result TEXT CHECK (result IN ('W','L','BYE')) NOT NULL,
-        went_first BOOLEAN,
-        comment TEXT,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE
-      );
-    `);
-  },
-  (db) => {
-    db.execSync(`
-      ALTER TABLE tournaments ADD COLUMN event_date TEXT NOT NULL DEFAULT CURRENT_DATE;
-    `);
+    try {
+      db.execSync(`ALTER TABLE matches ADD COLUMN dice_roll INTEGER;`);
+    } catch (e) {
+      console.log("[Database] dice_roll column already exists, skipping...");
+    }
   },
 ];
 
@@ -146,6 +128,20 @@ export const initDB = (): void => {
   }
   if (version < MIGRATIONS.length) {
     db.execSync(`PRAGMA user_version = ${MIGRATIONS.length}`);
+  }
+
+  console.log(`[Database] Current PRAGMA user_version: ${version}`);
+
+  for (let i = version; i < MIGRATIONS.length; i++) {
+    console.log(`[Database] Applying migration ${i}...`);
+    db.withTransactionSync(() => MIGRATIONS[i](db));
+  }
+
+  if (version < MIGRATIONS.length) {
+    db.execSync(`PRAGMA user_version = ${MIGRATIONS.length}`);
+    console.log(
+      `[Database] Updated PRAGMA user_version to: ${MIGRATIONS.length}`,
+    );
   }
 };
 

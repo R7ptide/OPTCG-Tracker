@@ -5,16 +5,25 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, Stack } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../_layout";
-import { getTournaments, type TournamentWithRecord } from "../../repositories/tournaments";
+import {
+  getTournaments,
+  type TournamentWithRecord,
+} from "../../repositories/tournaments";
 import { getCardById } from "../../repositories/cards";
 import { formatDateDisplay } from "../../utils/date";
-import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
+import {
+  radius,
+  spacing,
+  typography,
+  type ThemeColors,
+} from "../../constants/theme";
 
 type TournamentListItem = TournamentWithRecord & { leaderName: string | null };
 
@@ -22,7 +31,7 @@ const loadTournaments = (): TournamentListItem[] => {
   return getTournaments().map((tournament) => ({
     ...tournament,
     leaderName: tournament.leader_id
-      ? getCardById(tournament.leader_id)?.name ?? null
+      ? (getCardById(tournament.leader_id)?.name ?? null)
       : null,
   }));
 };
@@ -32,6 +41,7 @@ export default function TournamentList() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
+  const [selectedFormat, setSelectedFormat] = useState<string>("All");
 
   useFocusEffect(
     useCallback(() => {
@@ -39,10 +49,76 @@ export default function TournamentList() {
     }, []),
   );
 
+  const availableFormats = useMemo(() => {
+    const formats = Array.from(new Set(tournaments.map((t) => t.format)));
+    formats.sort((a, b) => {
+      if (a === "Legacy") return -1;
+      if (b === "Legacy") return 1;
+      return b.localeCompare(a);
+    });
+
+    return ["All", ...formats];
+  }, [tournaments]);
+
+  const filteredTournaments = useMemo(() => {
+    if (selectedFormat === "All") return tournaments;
+    return tournaments.filter((t) => t.format === selectedFormat);
+  }, [tournaments, selectedFormat]);
+
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => router.push("/tournaments/search")}
+              style={styles.headerIcon}
+            >
+              <Ionicons name="search" size={24} color={colors.text} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+
+      {tournaments.length > 0 && (
+        <View style={styles.filterWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterScroll}
+          >
+            {availableFormats.map((format) => {
+              const isSelected = format === selectedFormat;
+              return (
+                <TouchableOpacity
+                  key={format}
+                  onPress={() => setSelectedFormat(format)}
+                  style={[
+                    styles.filterChip,
+                    isSelected
+                      ? styles.filterChipSelected
+                      : styles.filterChipUnselected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      isSelected
+                        ? styles.filterTextSelected
+                        : styles.filterTextUnselected,
+                    ]}
+                  >
+                    {format}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
       <FlatList
-        data={tournaments}
+        data={filteredTournaments}
         keyExtractor={(item) => String(item.id)}
         style={styles.flatList}
         contentContainerStyle={styles.list}
@@ -61,7 +137,11 @@ export default function TournamentList() {
               />
             ) : (
               <View style={[styles.leaderThumb, styles.leaderThumbPlaceholder]}>
-                <Ionicons name="help-outline" size={20} color={colors.textMuted} />
+                <Ionicons
+                  name="help-outline"
+                  size={20}
+                  color={colors.textMuted}
+                />
               </View>
             )}
 
@@ -72,6 +152,7 @@ export default function TournamentList() {
                 {item.leaderName ? ` · ${item.leaderName}` : ""}
               </Text>
               <View style={styles.recordRow}>
+                <Text style={styles.formatText}>{item.format}</Text>
                 <Text style={styles.recordText}>
                   {item.wins}W - {item.losses}L
                 </Text>
@@ -81,12 +162,20 @@ export default function TournamentList() {
               </View>
             </View>
 
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textMuted}
+            />
           </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="trophy-outline" size={48} color={colors.textMuted} />
+            <Ionicons
+              name="trophy-outline"
+              size={48}
+              color={colors.textMuted}
+            />
             <Text style={styles.emptyText}>
               No tournaments yet. Add your first one below.
             </Text>
@@ -94,7 +183,9 @@ export default function TournamentList() {
         }
       />
 
-      <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
+      <View
+        style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}
+      >
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => router.push("/tournaments/new")}
@@ -110,6 +201,7 @@ export default function TournamentList() {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
+    headerIcon: { paddingRight: spacing.sm },
     flatList: { flex: 1 },
     list: { padding: spacing.md, paddingBottom: spacing.xxl },
     card: {
@@ -150,6 +242,11 @@ const createStyles = (colors: ThemeColors) =>
       gap: spacing.sm,
       marginTop: spacing.xs,
     },
+    formatText: {
+      color: colors.text,
+      fontSize: typography.sizes.sm,
+      fontWeight: "bold",
+    },
     recordText: {
       color: colors.accent,
       fontSize: typography.sizes.sm,
@@ -189,5 +286,42 @@ const createStyles = (colors: ThemeColors) =>
       color: "#fff",
       fontSize: typography.sizes.lg,
       fontWeight: "bold",
+    },
+    filterWrapper: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    filterScroll: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+    },
+    filterChip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    filterChipSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterChipUnselected: {
+      backgroundColor: "transparent",
+      borderColor: colors.border,
+    },
+    filterText: {
+      fontSize: typography.sizes.sm,
+    },
+    filterTextSelected: {
+      color: "#fff",
+      fontWeight: "bold",
+    },
+    filterTextUnselected: {
+      color: colors.textMuted,
+      fontWeight: "500",
     },
   });

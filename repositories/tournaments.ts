@@ -1,9 +1,13 @@
-import db, { type MatchResult, type MatchRow, type TournamentRow } from "../database";
+import db, {
+  type MatchResult,
+  type MatchRow,
+  type TournamentRow,
+} from "../database";
 import { toDateString } from "../utils/date";
 
 export type NewTournament = {
   title: string;
-  description?: string | null;
+  format: string;
   leaderId?: string | null;
   placement?: number | null;
   eventDate?: string;
@@ -11,10 +15,10 @@ export type NewTournament = {
 
 export const createTournament = (input: NewTournament): number => {
   const result = db.runSync(
-    "INSERT INTO tournaments (title, description, leader_id, placement, event_date) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO tournaments (title, format, leader_id, placement, event_date) VALUES (?, ?, ?, ?, ?)",
     [
       input.title,
-      input.description ?? null,
+      input.format,
       input.leaderId ?? null,
       input.placement ?? null,
       input.eventDate ?? toDateString(new Date()),
@@ -35,21 +39,46 @@ export type TournamentWithRecord = TournamentRow & {
   losses: number;
   byes: number;
   totalMatches: number;
+  leaderName: string | null;
 };
 
 export const getTournaments = (): TournamentWithRecord[] => {
   return db.getAllSync<TournamentWithRecord>(`
     SELECT
       t.*,
+      c.name AS leaderName,
       COALESCE(SUM(CASE WHEN m.result IN ('W', 'BYE') THEN 1 ELSE 0 END), 0) AS wins,
       COALESCE(SUM(CASE WHEN m.result = 'L' THEN 1 ELSE 0 END), 0) AS losses,
       COALESCE(SUM(CASE WHEN m.result = 'BYE' THEN 1 ELSE 0 END), 0) AS byes,
       COUNT(m.id) AS totalMatches
     FROM tournaments t
     LEFT JOIN matches m ON m.tournament_id = t.id
+    LEFT JOIN cards c ON c.id = t.leader_id
     GROUP BY t.id
     ORDER BY t.event_date DESC, t.created_at DESC, t.id DESC
   `);
+};
+
+export const searchTournaments = (query: string): TournamentWithRecord[] => {
+  const needle = `%${query.trim()}%`;
+  return db.getAllSync<TournamentWithRecord>(
+    `
+    SELECT
+      t.*,
+      c.name AS leaderName,
+      COALESCE(SUM(CASE WHEN m.result IN ('W', 'BYE') THEN 1 ELSE 0 END), 0) AS wins,
+      COALESCE(SUM(CASE WHEN m.result = 'L' THEN 1 ELSE 0 END), 0) AS losses,
+      COALESCE(SUM(CASE WHEN m.result = 'BYE' THEN 1 ELSE 0 END), 0) AS byes,
+      COUNT(m.id) AS totalMatches
+    FROM tournaments t
+    LEFT JOIN matches m ON m.tournament_id = t.id
+    LEFT JOIN cards c ON c.id = t.leader_id
+    WHERE t.title LIKE ? OR c.name LIKE ?
+    GROUP BY t.id
+    ORDER BY t.event_date DESC, t.created_at DESC, t.id DESC
+  `,
+    [needle, needle],
+  );
 };
 
 export const updateTournamentPlacement = (
@@ -64,7 +93,7 @@ export const updateTournamentPlacement = (
 
 export type TournamentUpdate = {
   title: string;
-  description?: string | null;
+  format: string;
   leaderId?: string | null;
   placement?: number | null;
   eventDate: string;
@@ -72,10 +101,10 @@ export type TournamentUpdate = {
 
 export const updateTournament = (id: number, input: TournamentUpdate): void => {
   db.runSync(
-    "UPDATE tournaments SET title = ?, description = ?, leader_id = ?, placement = ?, event_date = ? WHERE id = ?",
+    "UPDATE tournaments SET title = ?, format = ?, leader_id = ?, placement = ?, event_date = ? WHERE id = ?",
     [
       input.title,
-      input.description ?? null,
+      input.format,
       input.leaderId ?? null,
       input.placement ?? null,
       input.eventDate,
@@ -92,17 +121,23 @@ export type NewMatch = {
   tournamentId: number;
   opponentLeaderId?: string | null;
   result: MatchResult;
+  diceRoll?: boolean | null;
   wentFirst?: boolean | null;
   comment?: string | null;
 };
 
 export const addMatch = (input: NewMatch): number => {
   const result = db.runSync(
-    "INSERT INTO matches (tournament_id, opponent_leader_id, result, went_first, comment) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO matches (tournament_id, opponent_leader_id, result, dice_roll, went_first, comment) VALUES (?, ?, ?, ?, ?, ?)",
     [
       input.tournamentId,
       input.opponentLeaderId ?? null,
       input.result,
+      input.diceRoll === undefined || input.diceRoll === null
+        ? null
+        : input.diceRoll
+          ? 1
+          : 0,
       input.wentFirst === undefined || input.wentFirst === null
         ? null
         : input.wentFirst
@@ -124,16 +159,22 @@ export const getMatchesForTournament = (tournamentId: number): MatchRow[] => {
 export type MatchUpdate = {
   opponentLeaderId?: string | null;
   result: MatchResult;
+  diceRoll: boolean | null;
   wentFirst?: boolean | null;
   comment?: string | null;
 };
 
 export const updateMatch = (matchId: number, input: MatchUpdate): void => {
   db.runSync(
-    "UPDATE matches SET opponent_leader_id = ?, result = ?, went_first = ?, comment = ? WHERE id = ?",
+    "UPDATE matches SET opponent_leader_id = ?, result = ?, dice_roll = ?, went_first = ?, comment = ? WHERE id = ?",
     [
       input.opponentLeaderId ?? null,
       input.result,
+      input.diceRoll === undefined || input.diceRoll === null
+        ? null
+        : input.diceRoll
+          ? 1
+          : 0,
       input.wentFirst === undefined || input.wentFirst === null
         ? null
         : input.wentFirst
