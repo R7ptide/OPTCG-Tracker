@@ -12,19 +12,13 @@ import {
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../app/_layout";
-import { MAIN_SETS, EXTRA_BOOSTERS } from "../constants/gameData";
 import {
   radius,
   spacing,
   typography,
   type ThemeColors,
 } from "../constants/theme";
-
-const PREDEFINED_FORMATS = [
-  "Legacy",
-  ...[...MAIN_SETS].reverse(),
-  ...[...EXTRA_BOOSTERS].reverse(),
-];
+import { useGameData } from "../contexts/GameDataContext";
 
 type FormatPickerProps = {
   visible: boolean;
@@ -37,15 +31,22 @@ export default function FormatPicker({
   onClose,
   onSelect,
 }: FormatPickerProps) {
+  const { mainSets, extraBoosters } = useGameData();
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredFormats = useMemo(() => {
+    const predefinedFormats = [
+      "Legacy",
+      ...[...mainSets].reverse(),
+      ...[...extraBoosters].reverse(),
+    ];
+
     const query = searchQuery.toLowerCase().trim();
-    if (!query) return PREDEFINED_FORMATS;
-    return PREDEFINED_FORMATS.filter((f) => f.toLowerCase().includes(query));
-  }, [searchQuery]);
+    if (!query) return predefinedFormats;
+    return predefinedFormats.filter((f) => f.toLowerCase().includes(query));
+  }, [mainSets, extraBoosters, searchQuery]);
 
   const handleSelect = (format: string) => {
     onSelect(format);
