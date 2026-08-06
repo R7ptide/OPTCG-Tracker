@@ -1,31 +1,15 @@
 import { Stack } from "expo-router";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { initDB } from "../database";
-import { darkColors, lightColors, type ThemeColors } from "../constants/theme";
+import { darkColors, lightColors } from "../constants/theme";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { GameDataProvider } from "../contexts/GameDataContext";
+import { SettingsContext } from "../contexts/SettingsContext";
 import { getSetting, setSetting } from "../repositories/settings";
 
 const SHOW_MISSING_KEY = "showMissing";
 const LIGHT_MODE_KEY = "isLightMode";
-
-type SettingsContextValue = {
-  showMissing: boolean;
-  setShowMissing: (val: boolean) => void;
-  isLightMode: boolean;
-  toggleLightMode: () => void;
-  colors: ThemeColors;
-};
-
-const SettingsContext = createContext<SettingsContextValue | null>(null);
-
-export const useSettings = (): SettingsContextValue => {
-  const ctx = useContext(SettingsContext);
-  if (!ctx)
-    throw new Error("useSettings must be used inside <SettingsProvider>");
-  return ctx;
-};
 
 type PersistedSettings = { showMissing: boolean; isLightMode: boolean };
 

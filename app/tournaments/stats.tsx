@@ -15,7 +15,7 @@ import {
   typography,
   type ThemeColors,
 } from "../../constants/theme";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import {
   getTournaments,
   getMatchesForTournaments,
@@ -23,6 +23,8 @@ import {
 } from "../../repositories/tournaments";
 import { type MatchRow } from "../../database";
 import { getCardById } from "../../repositories/cards";
+import { cardImageUrl, getSetLabel } from "../../utils/cards";
+import { useAvailableFormats } from "../../hooks/useAvailableFormats";
 
 type Tab = "over" | "match";
 
@@ -46,8 +48,6 @@ const loadTournaments = (): TournamentListItem[] => {
   }));
 };
 
-const getSetLabel = (cardId: string) => cardId.split("-")[0] ?? "";
-
 export default function StatisticsMenu() {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -63,15 +63,7 @@ export default function StatisticsMenu() {
     }, []),
   );
 
-  const availableFormats = useMemo(() => {
-    const formats = Array.from(new Set(tournaments.map((t) => t.format)));
-    formats.sort((a, b) => {
-      if (a === "Legacy") return -1;
-      if (b === "Legacy") return 1;
-      return b.localeCompare(a);
-    });
-    return ["All", ...formats];
-  }, [tournaments]);
+  const availableFormats = useAvailableFormats(tournaments);
 
   const filteredTournaments = useMemo(() => {
     if (selectedFormat === "All") return tournaments;
@@ -440,9 +432,7 @@ export default function StatisticsMenu() {
                         ]}
                       >
                         <Image
-                          source={{
-                            uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${deck.leaderId}.png`,
-                          }}
+                          source={{ uri: cardImageUrl(deck.leaderId) }}
                           style={styles.deckImage}
                           resizeMode="cover"
                         />
@@ -518,9 +508,7 @@ export default function StatisticsMenu() {
                       ]}
                     >
                       <Image
-                        source={{
-                          uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${leader.id}.png`,
-                        }}
+                        source={{ uri: cardImageUrl(leader.id) }}
                         style={styles.leaderFilterImage}
                         resizeMode="cover"
                       />
@@ -675,9 +663,7 @@ export default function StatisticsMenu() {
                 >
                   <View style={styles.matchupLeft}>
                     <Image
-                      source={{
-                        uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${opp.oppId}.png`,
-                      }}
+                      source={{ uri: cardImageUrl(opp.oppId) }}
                       style={styles.matchupImage}
                       resizeMode="cover"
                     />
@@ -738,7 +724,7 @@ const StatBox = ({
   label: string;
   value: string | number;
   colors: ThemeColors;
-  styles: any;
+  styles: ReturnType<typeof createStyles>;
   valueColor?: string;
   containerColor?: string;
 }) => (

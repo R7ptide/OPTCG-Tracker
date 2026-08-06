@@ -8,15 +8,14 @@ import {
 import { router, useFocusEffect, Stack } from "expo-router";
 import { useState, useCallback, useMemo } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { getCardCountForSet } from "../../repositories/cards";
-import { getSetOwnedCount } from "../../repositories/collection";
+import { getSetCompletionStats } from "../../repositories/collection";
 import {
   radius,
   spacing,
   typography,
   type ThemeColors,
 } from "../../constants/theme";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import { useGameData } from "../../contexts/GameDataContext";
 
 type Tab = "main" | "special" | "sts";
@@ -90,13 +89,12 @@ export default function CollectionMenu() {
         ...starterDecks,
       ];
 
-      const newStats: Record<string, number> = {};
-
       try {
-        allSets.forEach((setId) => {
-          const total = getCardCountForSet(setId);
-          const owned = getSetOwnedCount(setId);
+        const completion = getSetCompletionStats();
+        const newStats: Record<string, number> = {};
 
+        allSets.forEach((setId) => {
+          const { total = 0, owned = 0 } = completion[setId] ?? {};
           newStats[setId] = total > 0 ? (owned / total) * 100 : 0;
         });
 

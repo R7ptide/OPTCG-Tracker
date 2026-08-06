@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useMemo } from "react";
 import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
-import { useSettings } from "../app/_layout";
+import { useSettings } from "../contexts/SettingsContext";
 
 export type CollectionCard = {
   id: string;

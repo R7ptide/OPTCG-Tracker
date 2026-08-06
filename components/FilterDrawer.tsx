@@ -10,7 +10,7 @@ import {
 import { useMemo } from "react";
 import { FILTER_GROUPS, type FilterKey } from "../constants/gameData";
 import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
-import { useSettings } from "../app/_layout";
+import { useSettings } from "../contexts/SettingsContext";
 import type { Filters } from "../hooks/useFilters";
 
 type Props = {

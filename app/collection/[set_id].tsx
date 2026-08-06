@@ -9,12 +9,14 @@ import {
 import { useLocalSearchParams, Stack } from "expo-router";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import { useFilters } from "../../hooks/useFilters";
-import { getOwnedForSet, incrementCard, decrementCard } from "../../repositories/collection";
+import { useCardQuantityActions } from "../../hooks/useCardQuantityActions";
+import { getOwnedForSet } from "../../repositories/collection";
 import { getCardsForSet } from "../../repositories/cards";
 import { RARITY_MAP } from "../../constants/gameData";
 import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
+import { buildCollectionCards } from "../../utils/collectionCards";
 import CardModal, { type CollectionCard } from "../../components/CardModal";
 import FilterDrawer from "../../components/FilterDrawer";
 
@@ -31,32 +33,8 @@ export default function SetDetails() {
 
   const { masterCards, setStats } = useMemo(() => {
     const ownedData = getOwnedForSet(set_id);
-    const ownedMap: Record<string, number> = {};
-    const basePlaysetMap: Record<string, number> = {};
-
-    ownedData.forEach((row) => {
-      ownedMap[row.card_id] = row.quantity;
-      const baseId = row.card_id.split("_")[0];
-      basePlaysetMap[baseId] = (basePlaysetMap[baseId] || 0) + row.quantity;
-    });
-
     const masterData = getCardsForSet(set_id);
-
-    const masterList: CollectionCard[] = masterData.map((row) => {
-      const baseId = row.id.split("_")[0];
-      return {
-        id: row.id,
-        name: row.name || "",
-        color: row.color || "",
-        type: row.type || "",
-        rarity: row.rarity || "",
-        cost: row.cost,
-        imageUrl: `https://en.onepiece-cardgame.com/images/cardlist/card/${row.id}.png`,
-        owned: (ownedMap[row.id] ?? 0) > 0,
-        quantity: ownedMap[row.id] || 0,
-        playsetTotal: basePlaysetMap[baseId] || 0,
-      };
-    });
+    const masterList = buildCollectionCards(masterData, ownedData);
 
     return {
       masterCards: masterList,
@@ -96,28 +74,11 @@ export default function SetDetails() {
     return true;
   });
 
-  const handleIncrement = () => {
-    if (!selectedCard) return;
-    incrementCard(selectedCard.id);
-
-    setDbVersion((v) => v + 1);
-    setSelectedCard((prev) =>
-      prev
-        ? { ...prev, quantity: prev.quantity + 1, owned: true }
-        : prev,
-    );
-  };
-
-  const handleDecrement = () => {
-    if (!selectedCard || selectedCard.quantity === 0) return;
-    decrementCard(selectedCard.id);
-
-    setDbVersion((v) => v + 1);
-    const newQty = selectedCard.quantity - 1;
-    setSelectedCard((prev) =>
-      prev ? { ...prev, quantity: newQty, owned: newQty > 0 } : prev,
-    );
-  };
+  const { handleIncrement, handleDecrement } = useCardQuantityActions(
+    selectedCard,
+    setSelectedCard,
+    () => setDbVersion((v) => v + 1),
+  );
 
   return (
     <View style={styles.container}>

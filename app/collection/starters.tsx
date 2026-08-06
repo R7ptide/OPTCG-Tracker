@@ -13,7 +13,7 @@ import {
   typography,
   type ThemeColors,
 } from "../../constants/theme";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import { useGameData } from "../../contexts/GameDataContext";
 
 export default function StartersMenu() {

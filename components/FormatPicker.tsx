@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useSettings } from "../app/_layout";
+import { useSettings } from "../contexts/SettingsContext";
 import {
   radius,
   spacing,

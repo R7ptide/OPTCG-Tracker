@@ -14,12 +14,13 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   type DateTimePickerChangeEvent,
 } from "@react-native-community/datetimepicker";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import { createTournament } from "../../repositories/tournaments";
 import { type MasterCardRow } from "../../repositories/cards";
 import LeaderPicker from "../../components/LeaderPicker";
 import FormatPicker from "../../components/FormatPicker";
 import { toDateString, formatDateDisplay } from "../../utils/date";
+import { cardImageUrl } from "../../utils/cards";
 import { parsePlacementInput } from "../../utils/placement";
 import {
   radius,
@@ -145,7 +146,7 @@ export default function NewTournament() {
             <>
               <Image
                 source={{
-                  uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${leader.id}.png`,
+                  uri: cardImageUrl(leader.id),
                 }}
                 style={styles.leaderThumb}
                 resizeMode="contain"

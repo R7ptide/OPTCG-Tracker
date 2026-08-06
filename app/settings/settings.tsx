@@ -19,7 +19,7 @@ import {
   wipeCollection,
   type BackupRow,
 } from "../../repositories/collection";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import {
   radius,
   spacing,

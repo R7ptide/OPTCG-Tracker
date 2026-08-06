@@ -9,17 +9,12 @@ import {
 } from "react-native";
 import { useEffect, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  searchCardsByName,
-  type MasterCardRow,
-} from "../../repositories/cards";
-import {
-  getCollectionRowsForCards,
-  incrementCard,
-  decrementCard,
-} from "../../repositories/collection";
+import { searchCardsByName } from "../../repositories/cards";
+import { getCollectionRowsForCards } from "../../repositories/collection";
 import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
+import { useCardQuantityActions } from "../../hooks/useCardQuantityActions";
+import { buildCollectionCards } from "../../utils/collectionCards";
 import CardModal, { type CollectionCard } from "../../components/CardModal";
 
 export default function CardSearch() {
@@ -40,53 +35,18 @@ export default function CardSearch() {
   const results = useMemo((): CollectionCard[] => {
     if (!debouncedQuery) return [];
 
-    const masterData: MasterCardRow[] = searchCardsByName(debouncedQuery);
-    const ownedMap: Record<string, number> = {};
-    const basePlaysetMap: Record<string, number> = {};
-
+    const masterData = searchCardsByName(debouncedQuery);
     const ownedRows = getCollectionRowsForCards(masterData.map((row) => row.id));
-    ownedRows.forEach((row) => {
-      ownedMap[row.card_id] = row.quantity;
-      const baseId = row.card_id.split("_")[0];
-      basePlaysetMap[baseId] = (basePlaysetMap[baseId] || 0) + row.quantity;
-    });
 
-    return masterData.map((row) => {
-      const baseId = row.id.split("_")[0];
-      return {
-        id: row.id,
-        name: row.name || "",
-        color: row.color || "",
-        type: row.type || "",
-        rarity: row.rarity || "",
-        cost: row.cost,
-        imageUrl: `https://en.onepiece-cardgame.com/images/cardlist/card/${row.id}.png`,
-        owned: (ownedMap[row.id] ?? 0) > 0,
-        quantity: ownedMap[row.id] || 0,
-        playsetTotal: basePlaysetMap[baseId] || 0,
-      };
-    });
+    return buildCollectionCards(masterData, ownedRows);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- dbVersion is an intentional invalidation trigger
   }, [debouncedQuery, dbVersion]);
 
-  const handleIncrement = () => {
-    if (!selectedCard) return;
-    incrementCard(selectedCard.id);
-    setDbVersion((v) => v + 1);
-    setSelectedCard((prev) =>
-      prev ? { ...prev, quantity: prev.quantity + 1, owned: true } : prev,
-    );
-  };
-
-  const handleDecrement = () => {
-    if (!selectedCard || selectedCard.quantity === 0) return;
-    decrementCard(selectedCard.id);
-    setDbVersion((v) => v + 1);
-    const newQty = selectedCard.quantity - 1;
-    setSelectedCard((prev) =>
-      prev ? { ...prev, quantity: newQty, owned: newQty > 0 } : prev,
-    );
-  };
+  const { handleIncrement, handleDecrement } = useCardQuantityActions(
+    selectedCard,
+    setSelectedCard,
+    () => setDbVersion((v) => v + 1),
+  );
 
   return (
     <View style={styles.container}>

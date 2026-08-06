@@ -23,6 +23,9 @@ const wrap = (raw: Database.Database) => ({
     const stmt = raw.prepare(sql);
     return {
       executeSync: (params: unknown[] = []) => stmt.run(...params),
+      // better-sqlite3 statements don't need explicit finalization (GC'd),
+      // but expo-sqlite's real API exposes this, so mock it as a no-op.
+      finalizeSync: (): void => {},
     };
   },
 });

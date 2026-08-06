@@ -26,6 +26,31 @@ export const getSetOwnedCount = (setId: string): number => {
   return row?.count ?? 0;
 };
 
+export type SetCompletionRow = { set_id: string; total: number; owned: number };
+
+// Single grouped query for every set's completion stats, instead of one
+// getCardCountForSet + getSetOwnedCount pair per set (used by the
+// collection menu, which otherwise fires 2 unindexed-ish queries per set).
+export const getSetCompletionStats = (): Record<
+  string,
+  { total: number; owned: number }
+> => {
+  const rows = db.getAllSync<SetCompletionRow>(`
+    SELECT
+      c.set_id AS set_id,
+      COUNT(*) AS total,
+      COUNT(CASE WHEN col.quantity > 0 THEN 1 END) AS owned
+    FROM cards c
+    LEFT JOIN collection col ON col.card_id = c.id
+    GROUP BY c.set_id
+  `);
+  const stats: Record<string, { total: number; owned: number }> = {};
+  for (const row of rows) {
+    stats[row.set_id] = { total: row.total, owned: row.owned };
+  }
+  return stats;
+};
+
 export type OwnedRow = { card_id: string; quantity: number };
 
 export const getOwnedForSet = (setId: string): OwnedRow[] => {
@@ -106,10 +131,14 @@ export const restoreCollection = (rows: BackupRow[]): void => {
     const insertStmt = db.prepareSync(
       "INSERT INTO collection (card_id, quantity) VALUES (?, ?)",
     );
-    rows.forEach((item) => {
-      if (item.card_id && item.quantity) {
-        insertStmt.executeSync([item.card_id, item.quantity]);
-      }
-    });
+    try {
+      rows.forEach((item) => {
+        if (item.card_id && item.quantity) {
+          insertStmt.executeSync([item.card_id, item.quantity]);
+        }
+      });
+    } finally {
+      insertStmt.finalizeSync();
+    }
   });
 };

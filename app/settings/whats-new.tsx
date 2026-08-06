@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { useMemo } from "react";
 import Constants from "expo-constants";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import {
   radius,
   spacing,

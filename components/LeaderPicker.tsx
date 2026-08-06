@@ -12,7 +12,8 @@ import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { getAllLeaders, type MasterCardRow } from "../repositories/cards";
 import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
-import { useSettings } from "../app/_layout";
+import { useSettings } from "../contexts/SettingsContext";
+import { cardImageUrl } from "../utils/cards";
 
 type Props = {
   visible: boolean;
@@ -90,7 +91,7 @@ export default function LeaderPicker({ visible, onClose, onSelect }: Props) {
             >
               <Image
                 source={{
-                  uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${item.id}.png`,
+                  uri: cardImageUrl(item.id),
                 }}
                 style={styles.cardImage}
                 resizeMode="contain"

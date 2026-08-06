@@ -23,7 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   type DateTimePickerChangeEvent,
 } from "@react-native-community/datetimepicker";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import {
   getTournamentById,
   getMatchesForTournament,
@@ -45,6 +45,7 @@ import {
   formatDateDisplay,
 } from "../../utils/date";
 import { parsePlacementInput } from "../../utils/placement";
+import { cardImageUrl, getSetLabel } from "../../utils/cards";
 import {
   radius,
   spacing,
@@ -67,8 +68,6 @@ const getColorHex = (color: string | null | undefined, fallback: string) => {
   return COLOR_HEX[first] ?? fallback;
 };
 
-const getSetLabel = (cardId: string) => cardId.split("-")[0] ?? "";
-
 const getOrdinal = (n: number) => {
   const mod100 = n % 100;
   if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
@@ -83,9 +82,6 @@ const getOrdinal = (n: number) => {
       return `${n}th`;
   }
 };
-
-const cardImageUrl = (cardId: string) =>
-  `https://en.onepiece-cardgame.com/images/cardlist/card/${cardId}.png`;
 
 type EnrichedMatch = MatchWithOpponent & {
   opponent: { id: string; name: string } | null;
