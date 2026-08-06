@@ -474,6 +474,7 @@ function EditTournamentModal({
 }: EditTournamentModalProps) {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
 
   const [title, setTitle] = useState(tournament.title);
   const [format, setFormat] = useState(tournament.format ?? "");
@@ -555,7 +556,7 @@ function EditTournamentModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
+      <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <Text style={styles.title}>Edit Tournament</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -691,6 +692,7 @@ function MatchModal({
 }: MatchModalProps) {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const isEditing = existingMatch != null;
 
   const [opponent, setOpponent] = useState<MasterCardRow | null>(
@@ -743,7 +745,7 @@ function MatchModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
+      <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <Text style={styles.title}>
             {isEditing ? "Edit Match" : "Add Match"}
