@@ -81,6 +81,19 @@ export const getAllCollectionRows = (): CollectionRow[] => {
   return db.getAllSync<CollectionRow>("SELECT * FROM collection");
 };
 
+// Scoped lookup for when only a handful of card IDs are needed (e.g. search
+// results) instead of loading the entire collection table.
+export const getCollectionRowsForCards = (
+  cardIds: string[],
+): CollectionRow[] => {
+  if (cardIds.length === 0) return [];
+  const placeholders = cardIds.map(() => "?").join(", ");
+  return db.getAllSync<CollectionRow>(
+    `SELECT * FROM collection WHERE card_id IN (${placeholders})`,
+    cardIds,
+  );
+};
+
 export const wipeCollection = (): void => {
   db.runSync("DELETE FROM collection");
 };

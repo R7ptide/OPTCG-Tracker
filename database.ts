@@ -123,12 +123,6 @@ export const initDB = (): void => {
 
   const row = db.getFirstSync<{ user_version: number }>("PRAGMA user_version");
   const version = row?.user_version ?? 0;
-  for (let i = version; i < MIGRATIONS.length; i++) {
-    db.withTransactionSync(() => MIGRATIONS[i](db));
-  }
-  if (version < MIGRATIONS.length) {
-    db.execSync(`PRAGMA user_version = ${MIGRATIONS.length}`);
-  }
 
   console.log(`[Database] Current PRAGMA user_version: ${version}`);
 

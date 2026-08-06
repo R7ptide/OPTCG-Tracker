@@ -16,7 +16,6 @@ import {
   getTournaments,
   type TournamentWithRecord,
 } from "../../repositories/tournaments";
-import { getCardById } from "../../repositories/cards";
 import { formatDateDisplay } from "../../utils/date";
 import {
   radius,
@@ -25,27 +24,16 @@ import {
   type ThemeColors,
 } from "../../constants/theme";
 
-type TournamentListItem = TournamentWithRecord & { leaderName: string | null };
-
-const loadTournaments = (): TournamentListItem[] => {
-  return getTournaments().map((tournament) => ({
-    ...tournament,
-    leaderName: tournament.leader_id
-      ? (getCardById(tournament.leader_id)?.name ?? null)
-      : null,
-  }));
-};
-
 export default function TournamentList() {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
+  const [tournaments, setTournaments] = useState<TournamentWithRecord[]>([]);
   const [selectedFormat, setSelectedFormat] = useState<string>("All");
 
   useFocusEffect(
     useCallback(() => {
-      setTournaments(loadTournaments());
+      setTournaments(getTournaments());
     }, []),
   );
 

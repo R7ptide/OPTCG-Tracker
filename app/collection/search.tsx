@@ -14,7 +14,7 @@ import {
   type MasterCardRow,
 } from "../../repositories/cards";
 import {
-  getAllCollectionRows,
+  getCollectionRowsForCards,
   incrementCard,
   decrementCard,
 } from "../../repositories/collection";
@@ -44,7 +44,8 @@ export default function CardSearch() {
     const ownedMap: Record<string, number> = {};
     const basePlaysetMap: Record<string, number> = {};
 
-    getAllCollectionRows().forEach((row) => {
+    const ownedRows = getCollectionRowsForCards(masterData.map((row) => row.id));
+    ownedRows.forEach((row) => {
       ownedMap[row.card_id] = row.quantity;
       const baseId = row.card_id.split("_")[0];
       basePlaysetMap[baseId] = (basePlaysetMap[baseId] || 0) + row.quantity;

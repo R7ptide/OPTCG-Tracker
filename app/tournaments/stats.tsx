@@ -18,7 +18,7 @@ import {
 import { useSettings } from "../_layout";
 import {
   getTournaments,
-  getMatchesForTournament,
+  getMatchesForTournaments,
   type TournamentWithRecord,
 } from "../../repositories/tournaments";
 import { type MatchRow } from "../../database";
@@ -32,17 +32,17 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 type TournamentListItem = TournamentWithRecord & {
-  leaderName: string | null;
   matches: MatchRow[];
 };
 
 const loadTournaments = (): TournamentListItem[] => {
-  return getTournaments().map((tournament) => ({
+  const tournaments = getTournaments();
+  const matchesByTournament = getMatchesForTournaments(
+    tournaments.map((t) => t.id),
+  );
+  return tournaments.map((tournament) => ({
     ...tournament,
-    leaderName: tournament.leader_id
-      ? (getCardById(tournament.leader_id)?.name ?? null)
-      : null,
-    matches: getMatchesForTournament(tournament.id),
+    matches: matchesByTournament[tournament.id] ?? [],
   }));
 };
 

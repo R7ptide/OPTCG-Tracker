@@ -33,9 +33,10 @@ import {
   updateTournamentPlacement,
   updateTournament,
   deleteTournament,
+  type MatchWithOpponent,
 } from "../../repositories/tournaments";
 import { getCardById, type MasterCardRow } from "../../repositories/cards";
-import type { MatchResult, MatchRow, TournamentRow } from "../../database";
+import type { MatchResult, TournamentRow } from "../../database";
 import LeaderPicker from "../../components/LeaderPicker";
 import FormatPicker from "../../components/FormatPicker";
 import {
@@ -86,7 +87,9 @@ const getOrdinal = (n: number) => {
 const cardImageUrl = (cardId: string) =>
   `https://en.onepiece-cardgame.com/images/cardlist/card/${cardId}.png`;
 
-type EnrichedMatch = MatchRow & { opponent: MasterCardRow | null };
+type EnrichedMatch = MatchWithOpponent & {
+  opponent: { id: string; name: string } | null;
+};
 
 export default function TournamentDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -112,9 +115,10 @@ export default function TournamentDetail() {
     setMatches(
       rawMatches.map((m) => ({
         ...m,
-        opponent: m.opponent_leader_id
-          ? getCardById(m.opponent_leader_id)
-          : null,
+        opponent:
+          m.opponent_leader_id && m.opponentName
+            ? { id: m.opponent_leader_id, name: m.opponentName }
+            : null,
       })),
     );
   }, [tournamentId]);
@@ -694,7 +698,7 @@ function MatchModal({
   const isEditing = existingMatch != null;
 
   const [opponent, setOpponent] = useState<MasterCardRow | null>(
-    existingMatch?.opponent ?? null,
+    existingMatch?.opponent ? getCardById(existingMatch.opponent.id) : null,
   );
   const [result, setResult] = useState<MatchResult>(
     existingMatch?.result ?? "W",

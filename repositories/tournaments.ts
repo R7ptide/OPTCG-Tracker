@@ -149,11 +149,39 @@ export const addMatch = (input: NewMatch): number => {
   return result.lastInsertRowId;
 };
 
-export const getMatchesForTournament = (tournamentId: number): MatchRow[] => {
-  return db.getAllSync<MatchRow>(
-    "SELECT * FROM matches WHERE tournament_id = ? ORDER BY id ASC",
+export type MatchWithOpponent = MatchRow & { opponentName: string | null };
+
+export const getMatchesForTournament = (
+  tournamentId: number,
+): MatchWithOpponent[] => {
+  return db.getAllSync<MatchWithOpponent>(
+    `
+    SELECT m.*, c.name AS opponentName
+    FROM matches m
+    LEFT JOIN cards c ON c.id = m.opponent_leader_id
+    WHERE m.tournament_id = ?
+    ORDER BY m.id ASC
+  `,
     [tournamentId],
   );
+};
+
+// Batched fetch to avoid N+1 queries when loading matches for many tournaments
+// at once (e.g. building aggregate stats). Groups results by tournament_id.
+export const getMatchesForTournaments = (
+  tournamentIds: number[],
+): Record<number, MatchRow[]> => {
+  if (tournamentIds.length === 0) return {};
+  const placeholders = tournamentIds.map(() => "?").join(", ");
+  const rows = db.getAllSync<MatchRow>(
+    `SELECT * FROM matches WHERE tournament_id IN (${placeholders}) ORDER BY id ASC`,
+    tournamentIds,
+  );
+  const grouped: Record<number, MatchRow[]> = {};
+  for (const row of rows) {
+    (grouped[row.tournament_id] ??= []).push(row);
+  }
+  return grouped;
 };
 
 export type MatchUpdate = {
