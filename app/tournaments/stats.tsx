@@ -91,7 +91,8 @@ export default function StatisticsMenu() {
     const leaderRecords: Record<string, { wins: number; losses: number }> = {};
 
     filteredTournaments.forEach((t) => {
-      wins += t.wins;
+      const realWins = t.wins - t.byes;
+      wins += realWins;
       losses += t.losses;
       if (t.placement === 1) tournamentsWon++;
 
@@ -99,7 +100,7 @@ export default function StatisticsMenu() {
         if (!leaderRecords[t.leader_id]) {
           leaderRecords[t.leader_id] = { wins: 0, losses: 0 };
         }
-        leaderRecords[t.leader_id].wins += t.wins;
+        leaderRecords[t.leader_id].wins += realWins;
         leaderRecords[t.leader_id].losses += t.losses;
       }
     });

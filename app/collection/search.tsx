@@ -8,24 +8,33 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useEffect, useMemo, useState } from "react";
+import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { searchCardsByName } from "../../repositories/cards";
 import { getCollectionRowsForCards } from "../../repositories/collection";
 import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
 import { useSettings } from "../../contexts/SettingsContext";
+import { useFilters } from "../../hooks/useFilters";
 import { useCardQuantityActions } from "../../hooks/useCardQuantityActions";
-import { buildCollectionCards } from "../../utils/collectionCards";
+import {
+  buildCollectionCards,
+  filterCollectionCards,
+  isPlaysetComplete,
+} from "../../utils/collectionCards";
 import CardModal, { type CollectionCard } from "../../components/CardModal";
+import FilterDrawer from "../../components/FilterDrawer";
 
 export default function CardSearch() {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { filters, setSearchName, toggle, toggleMissingPlayset } = useFilters();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [dbVersion, setDbVersion] = useState(0);
   const [selectedCard, setSelectedCard] = useState<CollectionCard | null>(
     null,
   );
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 200);
@@ -42,6 +51,11 @@ export default function CardSearch() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- dbVersion is an intentional invalidation trigger
   }, [debouncedQuery, dbVersion]);
 
+  const displayResults = filterCollectionCards(results, {
+    ...filters,
+    searchName: "",
+  });
+
   const { handleIncrement, handleDecrement } = useCardQuantityActions(
     selectedCard,
     setSelectedCard,
@@ -50,6 +64,19 @@ export default function CardSearch() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => setIsMenuOpen(true)}
+              style={styles.headerIcon}
+            >
+              <Ionicons name="filter" size={24} color={colors.text} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+
       <View style={styles.searchBar}>
         <Ionicons name="search" size={18} color={colors.placeholder} />
         <TextInput
@@ -68,15 +95,12 @@ export default function CardSearch() {
       </View>
 
       <FlatList
-        data={results}
+        data={displayResults}
         keyExtractor={(item) => item.id}
         numColumns={3}
         contentContainerStyle={{ padding: spacing.sm, paddingBottom: spacing.xxl }}
         renderItem={({ item }) => {
-          const isLeader = item.type && item.type.toLowerCase() === "leader";
-          const isComplete = isLeader
-            ? item.quantity >= 1
-            : item.playsetTotal >= 4;
+          const isComplete = isPlaysetComplete(item);
 
           return (
             <TouchableOpacity
@@ -115,6 +139,16 @@ export default function CardSearch() {
         }
       />
 
+      <FilterDrawer
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        filters={filters}
+        setSearchName={setSearchName}
+        toggle={toggle}
+        showNameFilter={false}
+        toggleMissingPlayset={toggleMissingPlayset}
+      />
+
       <CardModal
         card={selectedCard}
         onClose={() => setSelectedCard(null)}
@@ -128,6 +162,7 @@ export default function CardSearch() {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
+  headerIcon: { paddingRight: spacing.sm },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",

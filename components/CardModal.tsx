@@ -7,7 +7,12 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useMemo } from "react";
-import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
+import {
+  radius,
+  spacing,
+  typography,
+  type ThemeColors,
+} from "../constants/theme";
 import { useSettings } from "../contexts/SettingsContext";
 
 export type CollectionCard = {
@@ -30,7 +35,12 @@ type Props = {
   onDecrement: () => void;
 };
 
-export default function CardModal({ card, onClose, onIncrement, onDecrement }: Props) {
+export default function CardModal({
+  card,
+  onClose,
+  onIncrement,
+  onDecrement,
+}: Props) {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
@@ -39,6 +49,9 @@ export default function CardModal({ card, onClose, onIncrement, onDecrement }: P
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />
         {card && (
           <View style={styles.modalContent}>
+            <Text style={styles.cardTitle} numberOfLines={2}>
+              {card.name} ({card.id})
+            </Text>
             <Image
               source={{ uri: card.imageUrl }}
               style={styles.modalLargeImage}
@@ -65,53 +78,60 @@ export default function CardModal({ card, onClose, onIncrement, onDecrement }: P
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: { width: "85%", alignItems: "center" },
-  modalLargeImage: {
-    width: "100%",
-    aspectRatio: 0.7,
-    borderRadius: radius.lg,
-    marginBottom: spacing.xl,
-  },
-  controlsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    padding: spacing.md,
-    borderRadius: 50,
-    gap: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  circleBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  circleBtnText: {
-    color: colors.text,
-    fontSize: typography.sizes.display,
-    fontWeight: "bold",
-    lineHeight: 35,
-  },
-  qtyDisplay: { alignItems: "center", width: 60 },
-  qtyValue: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "bold",
-  },
-  qtyLabel: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    textTransform: "uppercase",
-    fontWeight: "bold",
-  },
-});
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modalContent: { width: "85%", alignItems: "center" },
+    cardTitle: {
+      color: colors.text,
+      fontSize: typography.sizes.xl,
+      fontWeight: "bold",
+      textAlign: "center",
+      marginBottom: spacing.sm,
+    },
+    modalLargeImage: {
+      width: "100%",
+      aspectRatio: 0.7,
+      borderRadius: radius.lg,
+      marginBottom: spacing.xl,
+    },
+    controlsContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      padding: spacing.md,
+      borderRadius: 50,
+      gap: spacing.xl,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    circleBtn: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    circleBtnText: {
+      color: colors.text,
+      fontSize: typography.sizes.display,
+      fontWeight: "bold",
+      lineHeight: 35,
+    },
+    qtyDisplay: { alignItems: "center", width: 60 },
+    qtyValue: {
+      color: colors.text,
+      fontSize: 28,
+      fontWeight: "bold",
+    },
+    qtyLabel: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.xs,
+      textTransform: "uppercase",
+      fontWeight: "bold",
+    },
+  });
