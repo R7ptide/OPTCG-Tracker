@@ -17,12 +17,18 @@ export default {
     android: {
       package: isDev ? "com.r7ptide.r7pose.dev" : "com.r7ptide.r7pose",
       versionCode: 3,
-      adaptiveIcon: {
-        backgroundColor: "#E6F4FE",
-        foregroundImage: "./assets/images/android-icon-foreground.png",
-        backgroundImage: "./assets/images/android-icon-background.png",
-        monochromeImage: "./assets/images/android-icon-monochrome.png",
-      },
+      adaptiveIcon: isDev
+        ? {
+            backgroundColor: "#FFDD57",
+            foregroundImage: "./assets/images/dev-icon.png",
+            monochromeImage: "./assets/images/android-icon-monochrome.png",
+          }
+        : {
+            backgroundColor: "#E6F4FE",
+            foregroundImage: "./assets/images/android-icon-foreground.png",
+            backgroundImage: "./assets/images/android-icon-background.png",
+            monochromeImage: "./assets/images/android-icon-monochrome.png",
+          },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
     },
