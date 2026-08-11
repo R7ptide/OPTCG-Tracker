@@ -22,7 +22,7 @@ import {
   typography,
   type ThemeColors,
 } from "../constants/theme";
-import { useSettings } from "./_layout";
+import { useSettings } from "../contexts/SettingsContext";
 
 type Stats = CollectionStats;
 

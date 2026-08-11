@@ -18,7 +18,8 @@ import {
   type ThemeColors,
 } from "../../constants/theme";
 import { formatDateDisplay } from "../../utils/date";
-import { useSettings } from "../_layout";
+import { cardImageUrl } from "../../utils/cards";
+import { useSettings } from "../../contexts/SettingsContext";
 
 export default function TournamentSearch() {
   const { colors } = useSettings();
@@ -75,7 +76,7 @@ export default function TournamentSearch() {
             {item.leader_id ? (
               <Image
                 source={{
-                  uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${item.leader_id}.png`,
+                  uri: cardImageUrl(item.leader_id),
                 }}
                 style={styles.leaderThumb}
                 resizeMode="cover"

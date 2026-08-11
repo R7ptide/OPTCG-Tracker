@@ -15,14 +15,16 @@ import {
   typography,
   type ThemeColors,
 } from "../../constants/theme";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import {
   getTournaments,
-  getMatchesForTournament,
+  getMatchesForTournaments,
   type TournamentWithRecord,
 } from "../../repositories/tournaments";
 import { type MatchRow } from "../../database";
 import { getCardById } from "../../repositories/cards";
+import { cardImageUrl, getSetLabel } from "../../utils/cards";
+import { useAvailableFormats } from "../../hooks/useAvailableFormats";
 
 type Tab = "over" | "match";
 
@@ -32,21 +34,19 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 type TournamentListItem = TournamentWithRecord & {
-  leaderName: string | null;
   matches: MatchRow[];
 };
 
 const loadTournaments = (): TournamentListItem[] => {
-  return getTournaments().map((tournament) => ({
+  const tournaments = getTournaments();
+  const matchesByTournament = getMatchesForTournaments(
+    tournaments.map((t) => t.id),
+  );
+  return tournaments.map((tournament) => ({
     ...tournament,
-    leaderName: tournament.leader_id
-      ? (getCardById(tournament.leader_id)?.name ?? null)
-      : null,
-    matches: getMatchesForTournament(tournament.id),
+    matches: matchesByTournament[tournament.id] ?? [],
   }));
 };
-
-const getSetLabel = (cardId: string) => cardId.split("-")[0] ?? "";
 
 export default function StatisticsMenu() {
   const { colors } = useSettings();
@@ -63,15 +63,7 @@ export default function StatisticsMenu() {
     }, []),
   );
 
-  const availableFormats = useMemo(() => {
-    const formats = Array.from(new Set(tournaments.map((t) => t.format)));
-    formats.sort((a, b) => {
-      if (a === "Legacy") return -1;
-      if (b === "Legacy") return 1;
-      return b.localeCompare(a);
-    });
-    return ["All", ...formats];
-  }, [tournaments]);
+  const availableFormats = useAvailableFormats(tournaments);
 
   const filteredTournaments = useMemo(() => {
     if (selectedFormat === "All") return tournaments;
@@ -99,7 +91,8 @@ export default function StatisticsMenu() {
     const leaderRecords: Record<string, { wins: number; losses: number }> = {};
 
     filteredTournaments.forEach((t) => {
-      wins += t.wins;
+      const realWins = t.wins - t.byes;
+      wins += realWins;
       losses += t.losses;
       if (t.placement === 1) tournamentsWon++;
 
@@ -107,7 +100,7 @@ export default function StatisticsMenu() {
         if (!leaderRecords[t.leader_id]) {
           leaderRecords[t.leader_id] = { wins: 0, losses: 0 };
         }
-        leaderRecords[t.leader_id].wins += t.wins;
+        leaderRecords[t.leader_id].wins += realWins;
         leaderRecords[t.leader_id].losses += t.losses;
       }
     });
@@ -440,9 +433,7 @@ export default function StatisticsMenu() {
                         ]}
                       >
                         <Image
-                          source={{
-                            uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${deck.leaderId}.png`,
-                          }}
+                          source={{ uri: cardImageUrl(deck.leaderId) }}
                           style={styles.deckImage}
                           resizeMode="cover"
                         />
@@ -518,9 +509,7 @@ export default function StatisticsMenu() {
                       ]}
                     >
                       <Image
-                        source={{
-                          uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${leader.id}.png`,
-                        }}
+                        source={{ uri: cardImageUrl(leader.id) }}
                         style={styles.leaderFilterImage}
                         resizeMode="cover"
                       />
@@ -675,9 +664,7 @@ export default function StatisticsMenu() {
                 >
                   <View style={styles.matchupLeft}>
                     <Image
-                      source={{
-                        uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${opp.oppId}.png`,
-                      }}
+                      source={{ uri: cardImageUrl(opp.oppId) }}
                       style={styles.matchupImage}
                       resizeMode="cover"
                     />
@@ -738,7 +725,7 @@ const StatBox = ({
   label: string;
   value: string | number;
   colors: ThemeColors;
-  styles: any;
+  styles: ReturnType<typeof createStyles>;
   valueColor?: string;
   containerColor?: string;
 }) => (

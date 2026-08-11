@@ -6,6 +6,7 @@ export type Filters = {
   colors: string[];
   types: string[];
   rarities: string[];
+  missingPlayset: boolean;
 };
 
 const INITIAL: Filters = {
@@ -13,6 +14,7 @@ const INITIAL: Filters = {
   colors: [],
   types: [],
   rarities: [],
+  missingPlayset: false,
 };
 
 export const useFilters = () => {
@@ -29,7 +31,10 @@ export const useFilters = () => {
         : [...f[key], value],
     }));
 
+  const toggleMissingPlayset = () =>
+    setFilters((f) => ({ ...f, missingPlayset: !f.missingPlayset }));
+
   const reset = () => setFilters(INITIAL);
 
-  return { filters, setSearchName, toggle, reset };
+  return { filters, setSearchName, toggle, toggleMissingPlayset, reset };
 };

@@ -11,13 +11,14 @@ import { router, useFocusEffect, Stack } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import {
   getTournaments,
   type TournamentWithRecord,
 } from "../../repositories/tournaments";
-import { getCardById } from "../../repositories/cards";
 import { formatDateDisplay } from "../../utils/date";
+import { cardImageUrl } from "../../utils/cards";
+import { useAvailableFormats } from "../../hooks/useAvailableFormats";
 import {
   radius,
   spacing,
@@ -25,40 +26,20 @@ import {
   type ThemeColors,
 } from "../../constants/theme";
 
-type TournamentListItem = TournamentWithRecord & { leaderName: string | null };
-
-const loadTournaments = (): TournamentListItem[] => {
-  return getTournaments().map((tournament) => ({
-    ...tournament,
-    leaderName: tournament.leader_id
-      ? (getCardById(tournament.leader_id)?.name ?? null)
-      : null,
-  }));
-};
-
 export default function TournamentList() {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
+  const [tournaments, setTournaments] = useState<TournamentWithRecord[]>([]);
   const [selectedFormat, setSelectedFormat] = useState<string>("All");
 
   useFocusEffect(
     useCallback(() => {
-      setTournaments(loadTournaments());
+      setTournaments(getTournaments());
     }, []),
   );
 
-  const availableFormats = useMemo(() => {
-    const formats = Array.from(new Set(tournaments.map((t) => t.format)));
-    formats.sort((a, b) => {
-      if (a === "Legacy") return -1;
-      if (b === "Legacy") return 1;
-      return b.localeCompare(a);
-    });
-
-    return ["All", ...formats];
-  }, [tournaments]);
+  const availableFormats = useAvailableFormats(tournaments);
 
   const filteredTournaments = useMemo(() => {
     if (selectedFormat === "All") return tournaments;
@@ -129,9 +110,7 @@ export default function TournamentList() {
           >
             {item.leader_id ? (
               <Image
-                source={{
-                  uri: `https://en.onepiece-cardgame.com/images/cardlist/card/${item.leader_id}.png`,
-                }}
+                source={{ uri: cardImageUrl(item.leader_id) }}
                 style={styles.leaderThumb}
                 resizeMode="cover"
               />

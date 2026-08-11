@@ -149,11 +149,39 @@ export const addMatch = (input: NewMatch): number => {
   return result.lastInsertRowId;
 };
 
-export const getMatchesForTournament = (tournamentId: number): MatchRow[] => {
-  return db.getAllSync<MatchRow>(
-    "SELECT * FROM matches WHERE tournament_id = ? ORDER BY id ASC",
+export type MatchWithOpponent = MatchRow & { opponentName: string | null };
+
+export const getMatchesForTournament = (
+  tournamentId: number,
+): MatchWithOpponent[] => {
+  return db.getAllSync<MatchWithOpponent>(
+    `
+    SELECT m.*, c.name AS opponentName
+    FROM matches m
+    LEFT JOIN cards c ON c.id = m.opponent_leader_id
+    WHERE m.tournament_id = ?
+    ORDER BY m.id ASC
+  `,
     [tournamentId],
   );
+};
+
+// Batched fetch to avoid N+1 queries when loading matches for many tournaments
+// at once (e.g. building aggregate stats). Groups results by tournament_id.
+export const getMatchesForTournaments = (
+  tournamentIds: number[],
+): Record<number, MatchRow[]> => {
+  if (tournamentIds.length === 0) return {};
+  const placeholders = tournamentIds.map(() => "?").join(", ");
+  const rows = db.getAllSync<MatchRow>(
+    `SELECT * FROM matches WHERE tournament_id IN (${placeholders}) ORDER BY id ASC`,
+    tournamentIds,
+  );
+  const grouped: Record<number, MatchRow[]> = {};
+  for (const row of rows) {
+    (grouped[row.tournament_id] ??= []).push(row);
+  }
+  return grouped;
 };
 
 export type MatchUpdate = {
@@ -188,4 +216,69 @@ export const updateMatch = (matchId: number, input: MatchUpdate): void => {
 
 export const deleteMatch = (matchId: number): void => {
   db.runSync("DELETE FROM matches WHERE id = ?", [matchId]);
+};
+
+// Raw table dumps for backup/export. Unlike getTournaments()/
+// getMatchesForTournament(), these carry no joined/derived columns so a
+// restore can reinsert them verbatim.
+export const getAllTournamentRows = (): TournamentRow[] => {
+  return db.getAllSync<TournamentRow>("SELECT * FROM tournaments");
+};
+
+export const getAllMatchRows = (): MatchRow[] => {
+  return db.getAllSync<MatchRow>("SELECT * FROM matches");
+};
+
+// Restores tournaments (and, via restoreMatches, their matches) from a
+// backup, preserving original ids so match.tournament_id foreign keys stay
+// valid. Replaces anything currently in the table.
+export const restoreTournaments = (rows: TournamentRow[]): void => {
+  db.withTransactionSync(() => {
+    db.runSync("DELETE FROM tournaments");
+    const insertStmt = db.prepareSync(
+      "INSERT INTO tournaments (id, title, format, leader_id, placement, event_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    );
+    try {
+      rows.forEach((row) => {
+        if (!row.id || !row.title) return;
+        insertStmt.executeSync([
+          row.id,
+          row.title,
+          row.format ?? "Legacy",
+          row.leader_id ?? null,
+          row.placement ?? null,
+          row.event_date,
+          row.created_at,
+        ]);
+      });
+    } finally {
+      insertStmt.finalizeSync();
+    }
+  });
+};
+
+export const restoreMatches = (rows: MatchRow[]): void => {
+  db.withTransactionSync(() => {
+    db.runSync("DELETE FROM matches");
+    const insertStmt = db.prepareSync(
+      "INSERT INTO matches (id, tournament_id, opponent_leader_id, result, dice_roll, went_first, comment, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    );
+    try {
+      rows.forEach((row) => {
+        if (!row.id || !row.tournament_id || !row.result) return;
+        insertStmt.executeSync([
+          row.id,
+          row.tournament_id,
+          row.opponent_leader_id ?? null,
+          row.result,
+          row.dice_roll ?? null,
+          row.went_first ?? null,
+          row.comment ?? null,
+          row.created_at,
+        ]);
+      });
+    } finally {
+      insertStmt.finalizeSync();
+    }
+  });
 };

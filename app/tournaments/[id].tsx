@@ -23,7 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   type DateTimePickerChangeEvent,
 } from "@react-native-community/datetimepicker";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
 import {
   getTournamentById,
   getMatchesForTournament,
@@ -33,9 +33,10 @@ import {
   updateTournamentPlacement,
   updateTournament,
   deleteTournament,
+  type MatchWithOpponent,
 } from "../../repositories/tournaments";
 import { getCardById, type MasterCardRow } from "../../repositories/cards";
-import type { MatchResult, MatchRow, TournamentRow } from "../../database";
+import type { MatchResult, TournamentRow } from "../../database";
 import LeaderPicker from "../../components/LeaderPicker";
 import FormatPicker from "../../components/FormatPicker";
 import {
@@ -44,6 +45,7 @@ import {
   formatDateDisplay,
 } from "../../utils/date";
 import { parsePlacementInput } from "../../utils/placement";
+import { cardImageUrl, getSetLabel } from "../../utils/cards";
 import {
   radius,
   spacing,
@@ -66,8 +68,6 @@ const getColorHex = (color: string | null | undefined, fallback: string) => {
   return COLOR_HEX[first] ?? fallback;
 };
 
-const getSetLabel = (cardId: string) => cardId.split("-")[0] ?? "";
-
 const getOrdinal = (n: number) => {
   const mod100 = n % 100;
   if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
@@ -83,10 +83,9 @@ const getOrdinal = (n: number) => {
   }
 };
 
-const cardImageUrl = (cardId: string) =>
-  `https://en.onepiece-cardgame.com/images/cardlist/card/${cardId}.png`;
-
-type EnrichedMatch = MatchRow & { opponent: MasterCardRow | null };
+type EnrichedMatch = MatchWithOpponent & {
+  opponent: { id: string; name: string } | null;
+};
 
 export default function TournamentDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -112,9 +111,10 @@ export default function TournamentDetail() {
     setMatches(
       rawMatches.map((m) => ({
         ...m,
-        opponent: m.opponent_leader_id
-          ? getCardById(m.opponent_leader_id)
-          : null,
+        opponent:
+          m.opponent_leader_id && m.opponentName
+            ? { id: m.opponent_leader_id, name: m.opponentName }
+            : null,
       })),
     );
   }, [tournamentId]);
@@ -474,6 +474,7 @@ function EditTournamentModal({
 }: EditTournamentModalProps) {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
 
   const [title, setTitle] = useState(tournament.title);
   const [format, setFormat] = useState(tournament.format ?? "");
@@ -555,7 +556,7 @@ function EditTournamentModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
+      <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <Text style={styles.title}>Edit Tournament</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -691,10 +692,11 @@ function MatchModal({
 }: MatchModalProps) {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const isEditing = existingMatch != null;
 
   const [opponent, setOpponent] = useState<MasterCardRow | null>(
-    existingMatch?.opponent ?? null,
+    existingMatch?.opponent ? getCardById(existingMatch.opponent.id) : null,
   );
   const [result, setResult] = useState<MatchResult>(
     existingMatch?.result ?? "W",
@@ -743,7 +745,7 @@ function MatchModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
+      <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <Text style={styles.title}>
             {isEditing ? "Edit Match" : "Add Match"}

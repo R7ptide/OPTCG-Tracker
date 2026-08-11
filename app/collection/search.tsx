@@ -8,29 +8,33 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useEffect, useMemo, useState } from "react";
+import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  searchCardsByName,
-  type MasterCardRow,
-} from "../../repositories/cards";
-import {
-  getAllCollectionRows,
-  incrementCard,
-  decrementCard,
-} from "../../repositories/collection";
+import { searchCardsByName } from "../../repositories/cards";
+import { getCollectionRowsForCards } from "../../repositories/collection";
 import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
+import { useFilters } from "../../hooks/useFilters";
+import { useCardQuantityActions } from "../../hooks/useCardQuantityActions";
+import {
+  buildCollectionCards,
+  filterCollectionCards,
+  isPlaysetComplete,
+} from "../../utils/collectionCards";
 import CardModal, { type CollectionCard } from "../../components/CardModal";
+import FilterDrawer from "../../components/FilterDrawer";
 
 export default function CardSearch() {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { filters, setSearchName, toggle, toggleMissingPlayset } = useFilters();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [dbVersion, setDbVersion] = useState(0);
   const [selectedCard, setSelectedCard] = useState<CollectionCard | null>(
     null,
   );
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 200);
@@ -40,55 +44,39 @@ export default function CardSearch() {
   const results = useMemo((): CollectionCard[] => {
     if (!debouncedQuery) return [];
 
-    const masterData: MasterCardRow[] = searchCardsByName(debouncedQuery);
-    const ownedMap: Record<string, number> = {};
-    const basePlaysetMap: Record<string, number> = {};
+    const masterData = searchCardsByName(debouncedQuery);
+    const ownedRows = getCollectionRowsForCards(masterData.map((row) => row.id));
 
-    getAllCollectionRows().forEach((row) => {
-      ownedMap[row.card_id] = row.quantity;
-      const baseId = row.card_id.split("_")[0];
-      basePlaysetMap[baseId] = (basePlaysetMap[baseId] || 0) + row.quantity;
-    });
-
-    return masterData.map((row) => {
-      const baseId = row.id.split("_")[0];
-      return {
-        id: row.id,
-        name: row.name || "",
-        color: row.color || "",
-        type: row.type || "",
-        rarity: row.rarity || "",
-        cost: row.cost,
-        imageUrl: `https://en.onepiece-cardgame.com/images/cardlist/card/${row.id}.png`,
-        owned: (ownedMap[row.id] ?? 0) > 0,
-        quantity: ownedMap[row.id] || 0,
-        playsetTotal: basePlaysetMap[baseId] || 0,
-      };
-    });
+    return buildCollectionCards(masterData, ownedRows);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- dbVersion is an intentional invalidation trigger
   }, [debouncedQuery, dbVersion]);
 
-  const handleIncrement = () => {
-    if (!selectedCard) return;
-    incrementCard(selectedCard.id);
-    setDbVersion((v) => v + 1);
-    setSelectedCard((prev) =>
-      prev ? { ...prev, quantity: prev.quantity + 1, owned: true } : prev,
-    );
-  };
+  const displayResults = filterCollectionCards(results, {
+    ...filters,
+    searchName: "",
+  });
 
-  const handleDecrement = () => {
-    if (!selectedCard || selectedCard.quantity === 0) return;
-    decrementCard(selectedCard.id);
-    setDbVersion((v) => v + 1);
-    const newQty = selectedCard.quantity - 1;
-    setSelectedCard((prev) =>
-      prev ? { ...prev, quantity: newQty, owned: newQty > 0 } : prev,
-    );
-  };
+  const { handleIncrement, handleDecrement } = useCardQuantityActions(
+    selectedCard,
+    setSelectedCard,
+    () => setDbVersion((v) => v + 1),
+  );
 
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => setIsMenuOpen(true)}
+              style={styles.headerIcon}
+            >
+              <Ionicons name="filter" size={24} color={colors.text} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+
       <View style={styles.searchBar}>
         <Ionicons name="search" size={18} color={colors.placeholder} />
         <TextInput
@@ -107,15 +95,12 @@ export default function CardSearch() {
       </View>
 
       <FlatList
-        data={results}
+        data={displayResults}
         keyExtractor={(item) => item.id}
         numColumns={3}
         contentContainerStyle={{ padding: spacing.sm, paddingBottom: spacing.xxl }}
         renderItem={({ item }) => {
-          const isLeader = item.type && item.type.toLowerCase() === "leader";
-          const isComplete = isLeader
-            ? item.quantity >= 1
-            : item.playsetTotal >= 4;
+          const isComplete = isPlaysetComplete(item);
 
           return (
             <TouchableOpacity
@@ -154,6 +139,16 @@ export default function CardSearch() {
         }
       />
 
+      <FilterDrawer
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        filters={filters}
+        setSearchName={setSearchName}
+        toggle={toggle}
+        showNameFilter={false}
+        toggleMissingPlayset={toggleMissingPlayset}
+      />
+
       <CardModal
         card={selectedCard}
         onClose={() => setSelectedCard(null)}
@@ -167,6 +162,7 @@ export default function CardSearch() {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
+  headerIcon: { paddingRight: spacing.sm },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",

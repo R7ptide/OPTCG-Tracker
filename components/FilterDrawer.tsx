@@ -10,7 +10,7 @@ import {
 import { useMemo } from "react";
 import { FILTER_GROUPS, type FilterKey } from "../constants/gameData";
 import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
-import { useSettings } from "../app/_layout";
+import { useSettings } from "../contexts/SettingsContext";
 import type { Filters } from "../hooks/useFilters";
 
 type Props = {
@@ -19,6 +19,8 @@ type Props = {
   filters: Filters;
   setSearchName: (val: string) => void;
   toggle: (key: FilterKey, value: string) => void;
+  showNameFilter?: boolean;
+  toggleMissingPlayset?: () => void;
 };
 
 export default function FilterDrawer({
@@ -27,6 +29,8 @@ export default function FilterDrawer({
   filters,
   setSearchName,
   toggle,
+  showNameFilter = true,
+  toggleMissingPlayset,
 }: Props) {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -38,14 +42,35 @@ export default function FilterDrawer({
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.drawerTitle}>Filters</Text>
 
-            <Text style={styles.filterLabel}>Card Name</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="e.g. Zoro"
-              placeholderTextColor={colors.placeholder}
-              value={filters.searchName}
-              onChangeText={setSearchName}
-            />
+            {showNameFilter && (
+              <>
+                <Text style={styles.filterLabel}>Card Name</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="e.g. Zoro"
+                  placeholderTextColor={colors.placeholder}
+                  value={filters.searchName}
+                  onChangeText={setSearchName}
+                />
+              </>
+            )}
+
+            {toggleMissingPlayset && (
+              <View>
+                <Text style={styles.filterLabel}>Playset</Text>
+                <View style={styles.chipRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.chip,
+                      filters.missingPlayset && styles.chipActive,
+                    ]}
+                    onPress={toggleMissingPlayset}
+                  >
+                    <Text style={styles.chipText}>Missing Playset</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
             {FILTER_GROUPS.map(({ key, label, options }) => (
               <View key={key}>

@@ -8,21 +8,15 @@ import {
 import { router, useFocusEffect, Stack } from "expo-router";
 import { useState, useCallback, useMemo } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { getCardCountForSet } from "../../repositories/cards";
-import { getSetOwnedCount } from "../../repositories/collection";
-import {
-  MAIN_SETS,
-  EXTRA_BOOSTERS,
-  PREMIUM_BOOSTERS,
-  STARTER_DECKS,
-} from "../../constants/gameData";
+import { getSetCompletionStats } from "../../repositories/collection";
 import {
   radius,
   spacing,
   typography,
   type ThemeColors,
 } from "../../constants/theme";
-import { useSettings } from "../_layout";
+import { useSettings } from "../../contexts/SettingsContext";
+import { useGameData } from "../../contexts/GameDataContext";
 
 type Tab = "main" | "special" | "sts";
 
@@ -76,6 +70,8 @@ function SetBox({ title, sets, onPress, stats, styles }: SetBoxProps) {
 }
 
 export default function CollectionMenu() {
+  const { mainSets, extraBoosters, starterDecks, premiumBoosters } =
+    useGameData();
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [activeTab, setActiveTab] = useState<Tab>("main");
@@ -86,20 +82,19 @@ export default function CollectionMenu() {
   useFocusEffect(
     useCallback(() => {
       const allSets = [
-        ...MAIN_SETS,
-        ...EXTRA_BOOSTERS,
-        ...PREMIUM_BOOSTERS,
+        ...mainSets,
+        ...extraBoosters,
+        ...premiumBoosters,
         "P",
-        ...STARTER_DECKS,
+        ...starterDecks,
       ];
 
-      const newStats: Record<string, number> = {};
-
       try {
-        allSets.forEach((setId) => {
-          const total = getCardCountForSet(setId);
-          const owned = getSetOwnedCount(setId);
+        const completion = getSetCompletionStats();
+        const newStats: Record<string, number> = {};
 
+        allSets.forEach((setId) => {
+          const { total = 0, owned = 0 } = completion[setId] ?? {};
           newStats[setId] = total > 0 ? (owned / total) * 100 : 0;
         });
 
@@ -107,7 +102,7 @@ export default function CollectionMenu() {
       } catch (error) {
         console.log("Error loading set completion stats", error);
       }
-    }, []),
+    }, [mainSets, extraBoosters, starterDecks, premiumBoosters]),
   );
 
   return (
@@ -152,21 +147,21 @@ export default function CollectionMenu() {
           <>
             <SetBox
               title="One Piece"
-              sets={MAIN_SETS}
+              sets={mainSets}
               onPress={navigateToSet}
               stats={stats}
               styles={styles}
             />
             <SetBox
               title="Extra Boosters"
-              sets={EXTRA_BOOSTERS}
+              sets={extraBoosters}
               onPress={navigateToSet}
               stats={stats}
               styles={styles}
             />
             <SetBox
               title="Premium Boosters"
-              sets={PREMIUM_BOOSTERS}
+              sets={premiumBoosters}
               onPress={navigateToSet}
               stats={stats}
               styles={styles}
@@ -187,7 +182,7 @@ export default function CollectionMenu() {
         {activeTab === "sts" && (
           <SetBox
             title="Starter Decks"
-            sets={STARTER_DECKS}
+            sets={starterDecks}
             onPress={navigateToSet}
             stats={stats}
             styles={styles}

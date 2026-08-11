@@ -12,6 +12,10 @@ import {
   getMatchesForTournament,
   updateMatch,
   deleteMatch,
+  getAllTournamentRows,
+  getAllMatchRows,
+  restoreTournaments,
+  restoreMatches,
 } from "../../repositories/tournaments";
 import { upsertCards } from "../../repositories/cards";
 import type { CardRow } from "../../database";
@@ -373,6 +377,56 @@ describe("deleteMatch", () => {
 
     const matches = getMatchesForTournament(id);
     expect(matches.map((m) => m.id)).toEqual([keep]);
+  });
+});
+
+describe("getAllTournamentRows / getAllMatchRows / restore*", () => {
+  it("restores tournaments and matches preserving original ids", () => {
+    const id = createTournament({
+      title: "Cup O",
+      format: "Legacy",
+      leaderId: "OP01-001",
+    });
+    addMatch({ tournamentId: id, result: "W", opponentLeaderId: "OP02-001" });
+    addMatch({ tournamentId: id, result: "L" });
+
+    const tournamentRows = getAllTournamentRows();
+    const matchRows = getAllMatchRows();
+
+    db.execSync("DELETE FROM matches; DELETE FROM tournaments;");
+    expect(getTournamentById(id)).toBeNull();
+
+    restoreTournaments(tournamentRows);
+    restoreMatches(matchRows);
+
+    expect(getTournamentById(id)).toMatchObject({ title: "Cup O" });
+    expect(getMatchesForTournament(id)).toHaveLength(2);
+  });
+
+  it("replaces any existing tournaments/matches on restore", () => {
+    const staleId = createTournament({ title: "Stale Cup", format: "Legacy" });
+    addMatch({ tournamentId: staleId, result: "W" });
+
+    restoreTournaments([]);
+    restoreMatches([]);
+
+    expect(getTournaments()).toHaveLength(0);
+    expect(getMatchesForTournament(staleId)).toHaveLength(0);
+  });
+
+  it("skips malformed rows on restore", () => {
+    restoreTournaments([
+      {
+        id: 0,
+        title: "Bad Row",
+        format: "Legacy",
+        leader_id: null,
+        placement: null,
+        event_date: "2024-01-01",
+        created_at: "2024-01-01",
+      },
+    ]);
+    expect(getTournaments()).toHaveLength(0);
   });
 });
 

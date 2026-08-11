@@ -58,19 +58,23 @@ export const upsertCards = (cards: CardRow[]): void => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    for (const card of cards) {
-      insertStmt.executeSync([
-        card.id,
-        card.name,
-        card.color,
-        card.type,
-        card.cost,
-        card.power,
-        card.attribute,
-        card.rarity,
-        card.image_url,
-        card.set_id,
-      ]);
+    try {
+      for (const card of cards) {
+        insertStmt.executeSync([
+          card.id,
+          card.name,
+          card.color,
+          card.type,
+          card.cost,
+          card.power,
+          card.attribute,
+          card.rarity,
+          card.image_url,
+          card.set_id,
+        ]);
+      }
+    } finally {
+      insertStmt.finalizeSync();
     }
   });
 };

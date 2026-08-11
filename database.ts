@@ -46,6 +46,17 @@ export type MatchRow = {
 
 type Migration = (db: SQLite.SQLiteDatabase) => void;
 
+const hasColumn = (
+  db: SQLite.SQLiteDatabase,
+  table: string,
+  column: string,
+): boolean => {
+  const columns = db.getAllSync<{ name: string }>(
+    `PRAGMA table_info(${table})`,
+  );
+  return columns.some((c) => c.name === column);
+};
+
 const MIGRATIONS: Migration[] = [
   (db) => {
     db.execSync(`
@@ -102,19 +113,21 @@ const MIGRATIONS: Migration[] = [
     `);
   },
   (db) => {
-    try {
+    if (!hasColumn(db, "tournaments", "format")) {
       db.execSync(
         `ALTER TABLE tournaments ADD COLUMN format TEXT NOT NULL DEFAULT 'Legacy';`,
       );
-    } catch (e) {
-      console.log("[Database] format column already exists, skipping...");
     }
 
-    try {
+    if (!hasColumn(db, "matches", "dice_roll")) {
       db.execSync(`ALTER TABLE matches ADD COLUMN dice_roll INTEGER;`);
-    } catch (e) {
-      console.log("[Database] dice_roll column already exists, skipping...");
     }
+  },
+  (db) => {
+    db.execSync(`
+      CREATE INDEX IF NOT EXISTS idx_cards_set_id ON cards (set_id);
+      CREATE INDEX IF NOT EXISTS idx_matches_tournament_id ON matches (tournament_id);
+    `);
   },
 ];
 
@@ -123,12 +136,6 @@ export const initDB = (): void => {
 
   const row = db.getFirstSync<{ user_version: number }>("PRAGMA user_version");
   const version = row?.user_version ?? 0;
-  for (let i = version; i < MIGRATIONS.length; i++) {
-    db.withTransactionSync(() => MIGRATIONS[i](db));
-  }
-  if (version < MIGRATIONS.length) {
-    db.execSync(`PRAGMA user_version = ${MIGRATIONS.length}`);
-  }
 
   console.log(`[Database] Current PRAGMA user_version: ${version}`);
 
