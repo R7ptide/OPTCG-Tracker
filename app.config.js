@@ -4,7 +4,7 @@ export default {
   expo: {
     name: isDev ? "R7-Pose (Dev)" : "R7-Pose",
     slug: "r7-pose",
-    version: "1.2.0",
+    version: "1.3.0",
     orientation: "portrait",
     icon: isDev ? "./assets/images/dev-icon.png" : "./assets/images/icon.png",
     scheme: "r7pose",
@@ -16,7 +16,7 @@ export default {
     },
     android: {
       package: isDev ? "com.r7ptide.r7pose.dev" : "com.r7ptide.r7pose",
-      versionCode: 3,
+      versionCode: 4,
       adaptiveIcon: isDev
         ? {
             backgroundColor: "#FFDD57",
