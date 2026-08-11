@@ -13,13 +13,17 @@ import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { useMemo } from "react";
+import { wipeCollection } from "../../repositories/collection";
 import {
-  getAllCollectionRows,
-  restoreCollection,
-  wipeCollection,
-  type BackupRow,
-} from "../../repositories/collection";
+  buildBackupPayload,
+  restoreBackupPayload,
+  isLegacyCollectionBackup,
+  isBackupPayload,
+  type BackupPayload,
+} from "../../repositories/backup";
 import { useSettings } from "../../contexts/SettingsContext";
+import { useCloudBackup } from "../../hooks/useCloudBackup";
+import { formatDateDisplay, toDateString } from "../../utils/date";
 import {
   radius,
   spacing,
@@ -31,16 +35,81 @@ export default function Settings() {
   const { showMissing, setShowMissing, isLightMode, toggleLightMode, colors } =
     useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const {
+    isLinked,
+    linkedEmail,
+    hasCloudBackup,
+    lastBackupAt,
+    isBusy,
+    linkGoogleAccount,
+    unlinkGoogleAccount,
+    backupNow,
+    restoreFromCloud,
+  } = useCloudBackup();
+
+  const handleLinkGoogle = async () => {
+    try {
+      await linkGoogleAccount();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      Alert.alert("Link Failed", message);
+    }
+  };
+
+  const handleUnlink = () => {
+    Alert.alert("Unlink Google Account?", "You can link it again anytime.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Unlink",
+        style: "destructive",
+        onPress: () => unlinkGoogleAccount(),
+      },
+    ]);
+  };
+
+  const handleBackupNow = async () => {
+    try {
+      await backupNow();
+      Alert.alert("Backed Up", "Your data has been saved to Google Drive.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      Alert.alert("Backup Failed", message);
+    }
+  };
+
+  const handleRestoreFromCloud = () => {
+    Alert.alert(
+      "Restore from Cloud?",
+      "Restoring will completely overwrite any cards and tournaments currently on this device. Are you sure you want to proceed?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Restore",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await restoreFromCloud();
+              Alert.alert("Restored", "Your data has been restored from Google Drive.");
+            } catch (error) {
+              const message =
+                error instanceof Error ? error.message : "Unknown error";
+              Alert.alert("Restore Failed", message);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const handleExport = async () => {
     try {
-      const collection = getAllCollectionRows();
-      if (collection.length === 0)
-        return Alert.alert("Empty", "No cards to export!");
+      const payload = buildBackupPayload();
+      if (payload.collection.length === 0 && payload.tournaments.length === 0)
+        return Alert.alert("Empty", "Nothing to export yet!");
 
       const file = new File(Paths.document, "OP_Vault_Backup.json");
       file.create({ overwrite: true });
-      file.write(JSON.stringify(collection));
+      file.write(JSON.stringify(payload));
 
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(file.uri);
@@ -62,18 +131,30 @@ export default function Settings() {
       const fileContent = await picked.text();
       const importedData = JSON.parse(fileContent);
 
-      if (!Array.isArray(importedData))
+      let payload: BackupPayload;
+      if (isLegacyCollectionBackup(importedData)) {
+        payload = {
+          version: 1,
+          exportedAt: "",
+          collection: importedData,
+          tournaments: [],
+          matches: [],
+        };
+      } else if (isBackupPayload(importedData)) {
+        payload = importedData;
+      } else {
         throw new Error("Invalid backup file format.");
+      }
 
       Alert.alert(
         "Warning",
-        "This will OVERWRITE your current collection. Are you sure?",
+        "This will OVERWRITE your current collection and tournaments. Are you sure?",
         [
           { text: "Cancel", style: "cancel" },
           {
             text: "Import",
             style: "destructive",
-            onPress: () => processImport(importedData as BackupRow[]),
+            onPress: () => processImport(payload),
           },
         ],
       );
@@ -82,10 +163,10 @@ export default function Settings() {
     }
   };
 
-  const processImport = (data: BackupRow[]) => {
+  const processImport = (payload: BackupPayload) => {
     try {
-      restoreCollection(data);
-      Alert.alert("Success", "Collection restored successfully!");
+      restoreBackupPayload(payload);
+      Alert.alert("Success", "Your data has been restored successfully!");
     } catch {
       Alert.alert("Database Error", "Failed to write imported data.");
     }
@@ -165,9 +246,87 @@ export default function Settings() {
 
         <Text style={styles.header}>Data Management</Text>
 
+        <Text style={styles.sectionLabel}>Cloud Backup (Recommended)</Text>
+
+        {isLinked ? (
+          <>
+            <View style={styles.linkedRow}>
+              <Text style={styles.linkedText} numberOfLines={1}>
+                Linked as {linkedEmail}
+              </Text>
+              <TouchableOpacity onPress={handleUnlink}>
+                <Text style={styles.unlinkText}>Unlink</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.description}>
+              {lastBackupAt
+                ? `Last backed up: ${formatDateDisplay(toDateString(new Date(lastBackupAt)))}`
+                : "No cloud backup yet"}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.buttonAction}
+              onPress={handleBackupNow}
+              disabled={isBusy}
+            >
+              <Ionicons
+                name="cloud-upload-outline"
+                size={20}
+                color={colors.accent}
+                style={styles.icon}
+              />
+              <Text style={styles.buttonText}>
+                {isBusy ? "Backing up…" : "Backup Now"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.buttonAction,
+                !hasCloudBackup && styles.buttonActionDisabled,
+              ]}
+              onPress={handleRestoreFromCloud}
+              disabled={isBusy || !hasCloudBackup}
+            >
+              <Ionicons
+                name="cloud-download-outline"
+                size={20}
+                color={hasCloudBackup ? colors.accent : colors.textMuted}
+                style={styles.icon}
+              />
+              <Text
+                style={[
+                  styles.buttonText,
+                  !hasCloudBackup && styles.buttonTextDisabled,
+                ]}
+              >
+                {isBusy ? "Restoring…" : "Restore from Cloud"}
+              </Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity
+            style={styles.buttonAction}
+            onPress={handleLinkGoogle}
+          >
+            <Ionicons
+              name="logo-google"
+              size={20}
+              color={colors.accent}
+              style={styles.icon}
+            />
+            <Text style={styles.buttonText}>Link Google Account</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.divider} />
+
+        <Text style={styles.sectionLabel}>Advanced Data Options</Text>
+
         <Text style={styles.description}>
-          Backup your physical collection to the cloud, or restore from a
-          previous save.
+          Export your collection and tournament history to a JSON file, or
+          restore from a previous save. Works without a Google account.
         </Text>
 
         <TouchableOpacity style={styles.buttonAction} onPress={handleExport}>
@@ -177,7 +336,7 @@ export default function Settings() {
             color={colors.accent}
             style={styles.icon}
           />
-          <Text style={styles.buttonText}>Export Collection (Backup)</Text>
+          <Text style={styles.buttonText}>Export to JSON (Backup)</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.buttonAction} onPress={handleImport}>
@@ -187,7 +346,7 @@ export default function Settings() {
             color={colors.accent}
             style={styles.icon}
           />
-          <Text style={styles.buttonText}>Import Collection (Restore)</Text>
+          <Text style={styles.buttonText}>Import from JSON (Restore)</Text>
         </TouchableOpacity>
 
         <View style={styles.divider} />
@@ -246,10 +405,36 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.border,
       marginVertical: spacing.xl,
     },
+    sectionLabel: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.xs,
+      fontWeight: "bold",
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      marginBottom: spacing.sm,
+    },
     description: {
       color: colors.textMuted,
       fontSize: typography.sizes.md,
       marginBottom: spacing.md,
+    },
+    linkedRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: spacing.xs,
+    },
+    linkedText: {
+      color: colors.text,
+      fontSize: typography.sizes.md,
+      fontWeight: "bold",
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+    unlinkText: {
+      color: colors.danger,
+      fontSize: typography.sizes.sm,
+      fontWeight: "bold",
     },
     buttonAction: {
       flexDirection: "row",
@@ -261,10 +446,17 @@ const createStyles = (colors: ThemeColors) =>
       borderWidth: 1,
       borderColor: colors.accent,
     },
+    buttonActionDisabled: {
+      borderColor: colors.border,
+      opacity: 0.5,
+    },
     buttonText: {
       color: colors.text,
       fontSize: typography.sizes.lg,
       fontWeight: "bold",
+    },
+    buttonTextDisabled: {
+      color: colors.textMuted,
     },
     icon: { marginRight: spacing.sm },
     dangerHeader: {
