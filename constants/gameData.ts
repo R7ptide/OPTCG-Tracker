@@ -8,7 +8,7 @@ const range = (count: number, prefix: string): string[] =>
 
 export const fetchGameData = async () => {
   try {
-    const url = `https://gist.githubusercontent.com/R7ptide/5155dcc8ccdc76e98377ca1214f292d0/raw/gameData.json?t=${Date.now()}`;
+    const url = `http://api.100.95.187.118.nip.io/expansions`;
     const response = await fetch(url);
     const data = await response.json();
 
@@ -19,9 +19,9 @@ export const fetchGameData = async () => {
     if (cachedData) return JSON.parse(cachedData);
 
     return {
-      mainSetCount: 16,
+      mainSetCount: 17,
       extraBoosterCount: 4,
-      starterDeckCount: 30,
+      starterDeckCount: 36,
       premiumBoostersCount: 2,
     };
   }

@@ -3,10 +3,10 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  Image,
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import { Image } from "expo-image";
 import { useEffect, useMemo, useState } from "react";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -75,11 +75,12 @@ export default function TournamentSearch() {
           >
             {item.leader_id ? (
               <Image
-                source={{
-                  uri: cardImageUrl(item.leader_id),
-                }}
+                source={{ uri: cardImageUrl(item.leader_id) }}
+                placeholder={require("../../assets/images/leader-card-back.png")}
+                transition={200}
                 style={styles.leaderThumb}
-                resizeMode="cover"
+                contentFit="cover"
+                cachePolicy="memory-disk"
               />
             ) : (
               <View style={[styles.leaderThumb, styles.leaderThumbPlaceholder]}>

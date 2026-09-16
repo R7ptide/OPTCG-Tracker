@@ -2,11 +2,11 @@ import {
   View,
   Text,
   FlatList,
-  Image,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
 } from "react-native";
+import { Image } from "expo-image";
 import { router, useFocusEffect, Stack } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -111,8 +111,11 @@ export default function TournamentList() {
             {item.leader_id ? (
               <Image
                 source={{ uri: cardImageUrl(item.leader_id) }}
+                placeholder={require("../../assets/images/leader-card-back.png")}
+                transition={200}
                 style={styles.leaderThumb}
-                resizeMode="cover"
+                contentFit="cover"
+                cachePolicy="memory-disk"
               />
             ) : (
               <View style={[styles.leaderThumb, styles.leaderThumbPlaceholder]}>
