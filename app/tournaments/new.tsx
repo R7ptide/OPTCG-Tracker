@@ -3,11 +3,11 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Image,
   StyleSheet,
   Alert,
   Platform,
 } from "react-native";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -145,11 +145,12 @@ export default function NewTournament() {
           {leader ? (
             <>
               <Image
-                source={{
-                  uri: cardImageUrl(leader.id),
-                }}
+                source={{ uri: cardImageUrl(leader.id) }}
+                placeholder={require("../../assets/images/leader-card-back.png")}
+                transition={200}
                 style={styles.leaderThumb}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
               />
               <Text style={styles.selectorText}>{leader.name}</Text>
             </>

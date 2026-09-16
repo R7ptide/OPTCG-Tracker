@@ -1,11 +1,5 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  Modal,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, Modal, TouchableOpacity } from "react-native";
+import { Image } from "expo-image";
 import { useMemo } from "react";
 import {
   radius,
@@ -54,8 +48,15 @@ export default function CardModal({
             </Text>
             <Image
               source={{ uri: card.imageUrl }}
+              placeholder={
+                card.type === "Leader"
+                  ? require("../assets/images/leader-card-back.png")
+                  : require("../assets/images/card-back.png")
+              }
+              transition={200}
               style={styles.modalLargeImage}
-              resizeMode="contain"
+              contentFit="contain"
+              cachePolicy="memory-disk"
             />
             <View style={styles.controlsContainer}>
               <TouchableOpacity style={styles.circleBtn} onPress={onDecrement}>

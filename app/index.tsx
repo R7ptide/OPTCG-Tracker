@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  Image,
 } from "react-native";
+import { Image } from "expo-image";
 import { router, Stack, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback, useMemo } from "react";

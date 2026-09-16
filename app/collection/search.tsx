@@ -2,17 +2,22 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
-  Image,
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import { Image } from "expo-image";
+import { FlashList } from "@shopify/flash-list";
 import { useEffect, useMemo, useState } from "react";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { searchCardsByName } from "../../repositories/cards";
 import { getCollectionRowsForCards } from "../../repositories/collection";
-import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
+import {
+  radius,
+  spacing,
+  typography,
+  type ThemeColors,
+} from "../../constants/theme";
 import { useSettings } from "../../contexts/SettingsContext";
 import { useFilters } from "../../hooks/useFilters";
 import { useCardQuantityActions } from "../../hooks/useCardQuantityActions";
@@ -31,9 +36,7 @@ export default function CardSearch() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [dbVersion, setDbVersion] = useState(0);
-  const [selectedCard, setSelectedCard] = useState<CollectionCard | null>(
-    null,
-  );
+  const [selectedCard, setSelectedCard] = useState<CollectionCard | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -45,7 +48,9 @@ export default function CardSearch() {
     if (!debouncedQuery) return [];
 
     const masterData = searchCardsByName(debouncedQuery);
-    const ownedRows = getCollectionRowsForCards(masterData.map((row) => row.id));
+    const ownedRows = getCollectionRowsForCards(
+      masterData.map((row) => row.id),
+    );
 
     return buildCollectionCards(masterData, ownedRows);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- dbVersion is an intentional invalidation trigger
@@ -89,16 +94,23 @@ export default function CardSearch() {
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={() => setQuery("")}>
-            <Ionicons name="close-circle" size={18} color={colors.placeholder} />
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color={colors.placeholder}
+            />
           </TouchableOpacity>
         )}
       </View>
 
-      <FlatList
+      <FlashList
         data={displayResults}
         keyExtractor={(item) => item.id}
         numColumns={3}
-        contentContainerStyle={{ padding: spacing.sm, paddingBottom: spacing.xxl }}
+        contentContainerStyle={{
+          padding: spacing.sm,
+          paddingBottom: spacing.xxl,
+        }}
         renderItem={({ item }) => {
           const isComplete = isPlaysetComplete(item);
 
@@ -109,11 +121,19 @@ export default function CardSearch() {
             >
               <Image
                 source={{ uri: item.imageUrl }}
+                recyclingKey={item.id}
+                placeholder={
+                  item.type === "Leader"
+                    ? require("../../assets/images/leader-card-back.png")
+                    : require("../../assets/images/card-back.png")
+                }
+                transition={200}
                 style={[
                   styles.cardImage,
                   item.owned ? styles.imageOwned : styles.imageMissing,
                 ]}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
               />
               {item.owned && (
                 <View style={styles.qtyBadge}>
@@ -161,45 +181,45 @@ export default function CardSearch() {
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  headerIcon: { paddingRight: spacing.sm },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    backgroundColor: colors.surface,
-    margin: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    color: colors.text,
-    paddingVertical: spacing.sm,
-    fontSize: typography.sizes.md,
-  },
-  cardSlot: {
-    flex: 1,
-    margin: spacing.xs,
-    aspectRatio: 0.7,
-    borderRadius: radius.sm,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cardImage: { width: "100%", height: "100%", borderRadius: radius.sm },
-  imageOwned: { opacity: 1 },
-  imageMissing: { opacity: 0.2 },
-  qtyBadge: {
-    position: "absolute",
-    bottom: spacing.xs,
-    right: spacing.xs,
-    backgroundColor: colors.overlayBadge,
-    borderRadius: radius.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  qtyText: { fontSize: typography.sizes.sm, fontWeight: "bold" },
-  empty: { color: colors.textMuted, textAlign: "center", marginTop: 50 },
-});
+    container: { flex: 1, backgroundColor: colors.bg },
+    headerIcon: { paddingRight: spacing.sm },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      backgroundColor: colors.surface,
+      margin: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchInput: {
+      flex: 1,
+      color: colors.text,
+      paddingVertical: spacing.sm,
+      fontSize: typography.sizes.md,
+    },
+    cardSlot: {
+      flex: 1,
+      margin: spacing.xs,
+      aspectRatio: 0.7,
+      borderRadius: radius.sm,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    cardImage: { width: "100%", height: "100%", borderRadius: radius.sm },
+    imageOwned: { opacity: 1 },
+    imageMissing: { opacity: 0.2 },
+    qtyBadge: {
+      position: "absolute",
+      bottom: spacing.xs,
+      right: spacing.xs,
+      backgroundColor: colors.overlayBadge,
+      borderRadius: radius.sm,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    qtyText: { fontSize: typography.sizes.sm, fontWeight: "bold" },
+    empty: { color: colors.textMuted, textAlign: "center", marginTop: 50 },
+  });

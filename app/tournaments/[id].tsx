@@ -1,7 +1,6 @@
 import {
   View,
   Text,
-  Image,
   FlatList,
   TouchableOpacity,
   TextInput,
@@ -11,6 +10,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { Image } from "expo-image";
 import {
   router,
   Stack,
@@ -167,8 +167,11 @@ export default function TournamentDetail() {
           >
             <Image
               source={{ uri: cardImageUrl(leaderCard.id) }}
+              placeholder={require("../../assets/images/leader-card-back.png")}
+              transition={200}
               style={styles.leaderImage}
-              resizeMode="cover"
+              contentFit="cover"
+              cachePolicy="memory-disk"
             />
           </View>
         ) : (
@@ -238,8 +241,11 @@ export default function TournamentDetail() {
             ) : item.opponent ? (
               <Image
                 source={{ uri: cardImageUrl(item.opponent.id) }}
+                placeholder={require("../../assets/images/leader-card-back.png")}
+                transition={200}
                 style={styles.opponentThumb}
-                resizeMode="cover"
+                contentFit="cover"
+                cachePolicy="memory-disk"
               />
             ) : (
               <View
@@ -615,8 +621,11 @@ function EditTournamentModal({
               <>
                 <Image
                   source={{ uri: cardImageUrl(leader.id) }}
+                  placeholder={require("../../assets/images/leader-card-back.png")}
+                  transition={200}
                   style={styles.leaderThumbSmall}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
                 />
                 <Text style={styles.placeholderText}>{leader.name}</Text>
               </>
@@ -790,9 +799,12 @@ function MatchModal({
                   <>
                     <Image
                       source={{ uri: cardImageUrl(opponent.id) }}
+                      placeholder={require("../../assets/images/leader-card-back.png")}
+                      transition={200}
                       style={styles.leaderThumbSmall}
-                      resizeMode="contain"
-                    />
+                      contentFit="contain"
+                      cachePolicy="memory-disk"
+                    />{" "}
                     <Text style={styles.leaderName}>{opponent.name}</Text>
                   </>
                 ) : (

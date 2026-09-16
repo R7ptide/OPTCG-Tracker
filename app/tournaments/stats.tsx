@@ -4,8 +4,8 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Image,
 } from "react-native";
+import { Image } from "expo-image";
 import { useState, useMemo, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 //import { Ionicons } from "@expo/vector-icons";
@@ -434,8 +434,11 @@ export default function StatisticsMenu() {
                       >
                         <Image
                           source={{ uri: cardImageUrl(deck.leaderId) }}
+                          placeholder={require("../../assets/images/leader-card-back.png")}
+                          transition={200}
                           style={styles.deckImage}
-                          resizeMode="cover"
+                          contentFit="cover"
+                          cachePolicy="memory-disk"
                         />
                         <Text style={[styles.deckRate, { color: colors.text }]}>
                           {deck.winRate}%
@@ -510,8 +513,11 @@ export default function StatisticsMenu() {
                     >
                       <Image
                         source={{ uri: cardImageUrl(leader.id) }}
+                        placeholder={require("../../assets/images/leader-card-back.png")}
+                        transition={200}
                         style={styles.leaderFilterImage}
-                        resizeMode="cover"
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
                       />
                     </TouchableOpacity>
                   );
@@ -665,8 +671,11 @@ export default function StatisticsMenu() {
                   <View style={styles.matchupLeft}>
                     <Image
                       source={{ uri: cardImageUrl(opp.oppId) }}
+                      placeholder={require("../../assets/images/leader-card-back.png")}
+                      transition={200}
                       style={styles.matchupImage}
-                      resizeMode="cover"
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
                     />
                     <View style={styles.matchupInfo}>
                       <Text style={styles.matchupName} numberOfLines={1}>

@@ -4,14 +4,19 @@ import {
   StyleSheet,
   Modal,
   FlatList,
-  Image,
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { getAllLeaders, type MasterCardRow } from "../repositories/cards";
-import { radius, spacing, typography, type ThemeColors } from "../constants/theme";
+import {
+  radius,
+  spacing,
+  typography,
+  type ThemeColors,
+} from "../constants/theme";
 import { useSettings } from "../contexts/SettingsContext";
 import { cardImageUrl } from "../utils/cards";
 
@@ -42,11 +47,7 @@ export default function LeaderPicker({ visible, onClose, onSelect }: Props) {
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Select Leader</Text>
@@ -90,11 +91,12 @@ export default function LeaderPicker({ visible, onClose, onSelect }: Props) {
               onPress={() => handleSelect(item)}
             >
               <Image
-                source={{
-                  uri: cardImageUrl(item.id),
-                }}
+                source={{ uri: cardImageUrl(item.id) }}
+                placeholder={require("../assets/images/leader-card-back.png")}
+                transition={200}
                 style={styles.cardImage}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
               />
               <Text style={styles.cardName} numberOfLines={1}>
                 {item.name}

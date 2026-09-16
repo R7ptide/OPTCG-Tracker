@@ -1,11 +1,6 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Image,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Image } from "expo-image";
+import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, Stack } from "expo-router";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,7 +9,12 @@ import { useFilters } from "../../hooks/useFilters";
 import { useCardQuantityActions } from "../../hooks/useCardQuantityActions";
 import { getOwnedForSet } from "../../repositories/collection";
 import { getCardsForSet } from "../../repositories/cards";
-import { radius, spacing, typography, type ThemeColors } from "../../constants/theme";
+import {
+  radius,
+  spacing,
+  typography,
+  type ThemeColors,
+} from "../../constants/theme";
 import {
   buildCollectionCards,
   filterCollectionCards,
@@ -81,7 +81,7 @@ export default function SetDetails() {
         </Text>
       </View>
 
-      <FlatList
+      <FlashList
         data={displayCards}
         keyExtractor={(item) => item.id}
         numColumns={3}
@@ -96,11 +96,19 @@ export default function SetDetails() {
             >
               <Image
                 source={{ uri: item.imageUrl }}
+                recyclingKey={item.id}
+                placeholder={
+                  item.type === "Leader"
+                    ? require("../../assets/images/leader-card-back.png")
+                    : require("../../assets/images/card-back.png")
+                }
+                transition={200}
                 style={[
                   styles.cardImage,
                   item.owned ? styles.imageOwned : styles.imageMissing,
                 ]}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
               />
               {item.owned && (
                 <View style={styles.qtyBadge}>
@@ -145,39 +153,39 @@ export default function SetDetails() {
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, padding: spacing.sm },
-  headerIcon: { paddingRight: spacing.sm },
-  headerBox: { marginBottom: spacing.md, alignItems: "center" },
-  title: {
-    color: colors.text,
-    fontSize: typography.sizes.xxl,
-    fontWeight: "bold",
-  },
-  statsText: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.md,
-    marginTop: spacing.xs,
-  },
-  cardSlot: {
-    flex: 1,
-    margin: spacing.xs,
-    aspectRatio: 0.7,
-    borderRadius: radius.sm,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cardImage: { width: "100%", height: "100%", borderRadius: radius.sm },
-  imageOwned: { opacity: 1 },
-  imageMissing: { opacity: 0.2 },
-  qtyBadge: {
-    position: "absolute",
-    bottom: spacing.xs,
-    right: spacing.xs,
-    backgroundColor: colors.overlayBadge,
-    borderRadius: radius.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  qtyText: { fontSize: typography.sizes.sm, fontWeight: "bold" },
-  empty: { color: colors.textMuted, textAlign: "center", marginTop: 50 },
-});
+    container: { flex: 1, backgroundColor: colors.bg, padding: spacing.sm },
+    headerIcon: { paddingRight: spacing.sm },
+    headerBox: { marginBottom: spacing.md, alignItems: "center" },
+    title: {
+      color: colors.text,
+      fontSize: typography.sizes.xxl,
+      fontWeight: "bold",
+    },
+    statsText: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.md,
+      marginTop: spacing.xs,
+    },
+    cardSlot: {
+      flex: 1,
+      margin: spacing.xs,
+      aspectRatio: 0.7,
+      borderRadius: radius.sm,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    cardImage: { width: "100%", height: "100%", borderRadius: radius.sm },
+    imageOwned: { opacity: 1 },
+    imageMissing: { opacity: 0.2 },
+    qtyBadge: {
+      position: "absolute",
+      bottom: spacing.xs,
+      right: spacing.xs,
+      backgroundColor: colors.overlayBadge,
+      borderRadius: radius.sm,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    qtyText: { fontSize: typography.sizes.sm, fontWeight: "bold" },
+    empty: { color: colors.textMuted, textAlign: "center", marginTop: 50 },
+  });
