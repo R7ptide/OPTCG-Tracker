@@ -45,7 +45,7 @@ import {
   formatDateDisplay,
 } from "../../utils/date";
 import { parsePlacementInput } from "../../utils/placement";
-import { cardImageUrl, getSetLabel } from "../../utils/cards";
+import { resolveCardImage, getSetLabel } from "../../utils/cards";
 import {
   radius,
   spacing,
@@ -84,7 +84,7 @@ const getOrdinal = (n: number) => {
 };
 
 type EnrichedMatch = MatchWithOpponent & {
-  opponent: { id: string; name: string } | null;
+  opponent: { id: string; name: string; imageUrl: string | null } | null;
 };
 
 export default function TournamentDetail() {
@@ -113,7 +113,11 @@ export default function TournamentDetail() {
         ...m,
         opponent:
           m.opponent_leader_id && m.opponentName
-            ? { id: m.opponent_leader_id, name: m.opponentName }
+            ? {
+                id: m.opponent_leader_id,
+                name: m.opponentName,
+                imageUrl: m.opponentImageUrl,
+              }
             : null,
       })),
     );
@@ -166,7 +170,9 @@ export default function TournamentDetail() {
             style={[styles.leaderImageWrap, { borderColor: leaderColorHex }]}
           >
             <Image
-              source={{ uri: cardImageUrl(leaderCard.id) }}
+              source={{
+                uri: resolveCardImage(leaderCard.id, leaderCard.image_url),
+              }}
               placeholder={require("../../assets/images/leader-card-back.png")}
               transition={200}
               style={styles.leaderImage}
@@ -240,7 +246,12 @@ export default function TournamentDetail() {
               </View>
             ) : item.opponent ? (
               <Image
-                source={{ uri: cardImageUrl(item.opponent.id) }}
+                source={{
+                  uri: resolveCardImage(
+                    item.opponent.id,
+                    item.opponent.imageUrl,
+                  ),
+                }}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.opponentThumb}
@@ -620,7 +631,7 @@ function EditTournamentModal({
             {leader ? (
               <>
                 <Image
-                  source={{ uri: cardImageUrl(leader.id) }}
+                  source={{ uri: resolveCardImage(leader.id, leader.image_url) }}
                   placeholder={require("../../assets/images/leader-card-back.png")}
                   transition={200}
                   style={styles.leaderThumbSmall}
@@ -798,7 +809,12 @@ function MatchModal({
                 {opponent ? (
                   <>
                     <Image
-                      source={{ uri: cardImageUrl(opponent.id) }}
+                      source={{
+                        uri: resolveCardImage(
+                          opponent.id,
+                          opponent.image_url,
+                        ),
+                      }}
                       placeholder={require("../../assets/images/leader-card-back.png")}
                       transition={200}
                       style={styles.leaderThumbSmall}

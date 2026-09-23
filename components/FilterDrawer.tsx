@@ -44,10 +44,10 @@ export default function FilterDrawer({
 
             {showNameFilter && (
               <>
-                <Text style={styles.filterLabel}>Card Name</Text>
+                <Text style={styles.filterLabel}>Name, Attribute, or Trait</Text>
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="e.g. Zoro"
+                  placeholder="e.g. Zoro, Slash, Straw Hat Crew"
                   placeholderTextColor={colors.placeholder}
                   value={filters.searchName}
                   onChangeText={setSearchName}

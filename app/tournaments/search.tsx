@@ -18,7 +18,7 @@ import {
   type ThemeColors,
 } from "../../constants/theme";
 import { formatDateDisplay } from "../../utils/date";
-import { cardImageUrl } from "../../utils/cards";
+import { resolveCardImage } from "../../utils/cards";
 import { useSettings } from "../../contexts/SettingsContext";
 
 export default function TournamentSearch() {
@@ -75,7 +75,9 @@ export default function TournamentSearch() {
           >
             {item.leader_id ? (
               <Image
-                source={{ uri: cardImageUrl(item.leader_id) }}
+                source={{
+                  uri: resolveCardImage(item.leader_id, item.leaderImageUrl),
+                }}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.leaderThumb}

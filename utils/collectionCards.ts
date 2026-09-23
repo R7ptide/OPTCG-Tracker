@@ -1,6 +1,6 @@
 import { type MasterCardRow } from "../repositories/cards";
 import { type CollectionCard } from "../components/CardModal";
-import { cardImageUrl } from "./cards";
+import { resolveCardImage } from "./cards";
 import { RARITY_MAP } from "../constants/gameData";
 import { type Filters } from "../hooks/useFilters";
 
@@ -30,8 +30,10 @@ export const buildCollectionCards = (
       color: row.color || "",
       type: row.type || "",
       rarity: row.rarity || "",
+      attribute: row.attribute || "",
+      traits: row.traits || "",
       cost: row.cost,
-      imageUrl: cardImageUrl(row.id),
+      imageUrl: resolveCardImage(row.id, row.image_url),
       owned: (ownedMap[row.id] ?? 0) > 0,
       quantity: ownedMap[row.id] || 0,
       playsetTotal: basePlaysetMap[baseId] || 0,
@@ -61,11 +63,14 @@ export const filterCollectionCards = (
 
   return cards.filter((card) => {
     if (!showMissing && !card.owned) return false;
-    if (
-      filters.searchName &&
-      !card.name.toLowerCase().includes(filters.searchName.toLowerCase())
-    )
-      return false;
+    if (filters.searchName) {
+      const term = filters.searchName.toLowerCase();
+      const matches =
+        card.name.toLowerCase().includes(term) ||
+        card.attribute.toLowerCase().includes(term) ||
+        card.traits.toLowerCase().includes(term);
+      if (!matches) return false;
+    }
     if (
       filters.colors.length > 0 &&
       !filters.colors.some((c) => card.color.includes(c))

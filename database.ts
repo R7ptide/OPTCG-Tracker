@@ -13,6 +13,7 @@ export type CardRow = {
   rarity: string | null;
   image_url: string | null;
   set_id: string | null;
+  traits: string | null;
 };
 
 export type CollectionRow = {
@@ -128,6 +129,11 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_cards_set_id ON cards (set_id);
       CREATE INDEX IF NOT EXISTS idx_matches_tournament_id ON matches (tournament_id);
     `);
+  },
+  (db) => {
+    if (!hasColumn(db, "cards", "traits")) {
+      db.execSync(`ALTER TABLE cards ADD COLUMN traits TEXT;`);
+    }
   },
 ];
 

@@ -86,7 +86,7 @@ export default function CardSearch() {
         <Ionicons name="search" size={18} color={colors.placeholder} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search card name across all sets..."
+          placeholder="Search by name, attribute, or trait..."
           placeholderTextColor={colors.placeholder}
           value={query}
           onChangeText={setQuery}
@@ -153,8 +153,8 @@ export default function CardSearch() {
         ListEmptyComponent={
           <Text style={styles.empty}>
             {debouncedQuery
-              ? "No cards found matching that name."
-              : "Type a card name to search your whole collection."}
+              ? "No cards found matching that search."
+              : "Type a name, attribute, or trait to search your whole collection."}
           </Text>
         }
       />

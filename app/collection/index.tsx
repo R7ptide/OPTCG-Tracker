@@ -8,7 +8,10 @@ import {
 import { router, useFocusEffect, Stack } from "expo-router";
 import { useState, useCallback, useMemo } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { getSetCompletionStats } from "../../repositories/collection";
+import {
+  getSetCompletionStats,
+  getSetPlaysetCompletionStats,
+} from "../../repositories/collection";
 import {
   radius,
   spacing,
@@ -72,7 +75,7 @@ function SetBox({ title, sets, onPress, stats, styles }: SetBoxProps) {
 export default function CollectionMenu() {
   const { mainSets, extraBoosters, starterDecks, premiumBoosters } =
     useGameData();
-  const { colors } = useSettings();
+  const { colors, isPlayerMode } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [activeTab, setActiveTab] = useState<Tab>("main");
   const [stats, setStats] = useState<Record<string, number>>({});
@@ -90,19 +93,29 @@ export default function CollectionMenu() {
       ];
 
       try {
-        const completion = getSetCompletionStats();
         const newStats: Record<string, number> = {};
 
-        allSets.forEach((setId) => {
-          const { total = 0, owned = 0 } = completion[setId] ?? {};
-          newStats[setId] = total > 0 ? (owned / total) * 100 : 0;
-        });
+        if (isPlayerMode) {
+          const completion = getSetPlaysetCompletionStats();
+          allSets.forEach((setId) => {
+            const { totalBases = 0, completeBases = 0 } =
+              completion[setId] ?? {};
+            newStats[setId] =
+              totalBases > 0 ? (completeBases / totalBases) * 100 : 0;
+          });
+        } else {
+          const completion = getSetCompletionStats();
+          allSets.forEach((setId) => {
+            const { total = 0, owned = 0 } = completion[setId] ?? {};
+            newStats[setId] = total > 0 ? (owned / total) * 100 : 0;
+          });
+        }
 
         setStats(newStats);
       } catch (error) {
         console.log("Error loading set completion stats", error);
       }
-    }, [mainSets, extraBoosters, starterDecks, premiumBoosters]),
+    }, [mainSets, extraBoosters, starterDecks, premiumBoosters, isPlayerMode]),
   );
 
   return (

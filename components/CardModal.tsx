@@ -15,6 +15,8 @@ export type CollectionCard = {
   color: string;
   type: string;
   rarity: string;
+  attribute: string;
+  traits: string;
   cost: number | null;
   imageUrl: string;
   owned: boolean;

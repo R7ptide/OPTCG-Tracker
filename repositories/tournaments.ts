@@ -40,6 +40,7 @@ export type TournamentWithRecord = TournamentRow & {
   byes: number;
   totalMatches: number;
   leaderName: string | null;
+  leaderImageUrl: string | null;
 };
 
 export const getTournaments = (): TournamentWithRecord[] => {
@@ -47,6 +48,7 @@ export const getTournaments = (): TournamentWithRecord[] => {
     SELECT
       t.*,
       c.name AS leaderName,
+      c.image_url AS leaderImageUrl,
       COALESCE(SUM(CASE WHEN m.result IN ('W', 'BYE') THEN 1 ELSE 0 END), 0) AS wins,
       COALESCE(SUM(CASE WHEN m.result = 'L' THEN 1 ELSE 0 END), 0) AS losses,
       COALESCE(SUM(CASE WHEN m.result = 'BYE' THEN 1 ELSE 0 END), 0) AS byes,
@@ -66,6 +68,7 @@ export const searchTournaments = (query: string): TournamentWithRecord[] => {
     SELECT
       t.*,
       c.name AS leaderName,
+      c.image_url AS leaderImageUrl,
       COALESCE(SUM(CASE WHEN m.result IN ('W', 'BYE') THEN 1 ELSE 0 END), 0) AS wins,
       COALESCE(SUM(CASE WHEN m.result = 'L' THEN 1 ELSE 0 END), 0) AS losses,
       COALESCE(SUM(CASE WHEN m.result = 'BYE' THEN 1 ELSE 0 END), 0) AS byes,
@@ -149,14 +152,17 @@ export const addMatch = (input: NewMatch): number => {
   return result.lastInsertRowId;
 };
 
-export type MatchWithOpponent = MatchRow & { opponentName: string | null };
+export type MatchWithOpponent = MatchRow & {
+  opponentName: string | null;
+  opponentImageUrl: string | null;
+};
 
 export const getMatchesForTournament = (
   tournamentId: number,
 ): MatchWithOpponent[] => {
   return db.getAllSync<MatchWithOpponent>(
     `
-    SELECT m.*, c.name AS opponentName
+    SELECT m.*, c.name AS opponentName, c.image_url AS opponentImageUrl
     FROM matches m
     LEFT JOIN cards c ON c.id = m.opponent_leader_id
     WHERE m.tournament_id = ?

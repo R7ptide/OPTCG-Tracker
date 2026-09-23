@@ -23,7 +23,7 @@ import {
 } from "../../repositories/tournaments";
 import { type MatchRow } from "../../database";
 import { getCardById } from "../../repositories/cards";
-import { cardImageUrl, getSetLabel } from "../../utils/cards";
+import { resolveCardImage, getSetLabel } from "../../utils/cards";
 import { useAvailableFormats } from "../../hooks/useAvailableFormats";
 
 type Tab = "over" | "match";
@@ -74,13 +74,20 @@ export default function StatisticsMenu() {
     const leaderIds = Array.from(
       new Set(filteredTournaments.map((t) => t.leader_id).filter(Boolean)),
     );
-    const leaders = leaderIds.map((id) => ({
-      id: id as string,
-      name: getCardById(id as string)?.name || "Unknown Leader",
-    }));
+    const leaders = leaderIds.map((id) => {
+      const card = getCardById(id as string);
+      return {
+        id: id as string,
+        name: card?.name || "Unknown Leader",
+        imageUrl: card?.image_url ?? null,
+      };
+    });
     leaders.sort((a, b) => a.name.localeCompare(b.name));
 
-    return [{ id: "All", name: "All leaders" }, ...leaders];
+    return [
+      { id: "All", name: "All leaders", imageUrl: null },
+      ...leaders,
+    ];
   }, [filteredTournaments]);
 
   // calculate overview stats
@@ -116,6 +123,7 @@ export default function StatisticsMenu() {
           deckMatches > 0 ? Math.round((record.wins / deckMatches) * 100) : 0;
         return {
           leaderId: id,
+          leaderImageUrl: getCardById(id)?.image_url ?? null,
           wins: record.wins,
           losses: record.losses,
           winRate: deckRate,
@@ -238,6 +246,7 @@ export default function StatisticsMenu() {
         return {
           oppId,
           oppName: getCardById(oppId)?.name || "Unknown",
+          oppImageUrl: getCardById(oppId)?.image_url ?? null,
           wins: data.wins,
           losses: data.losses,
           generalRate: calcRate(data.wins, data.losses),
@@ -433,7 +442,12 @@ export default function StatisticsMenu() {
                         ]}
                       >
                         <Image
-                          source={{ uri: cardImageUrl(deck.leaderId) }}
+                          source={{
+                            uri: resolveCardImage(
+                              deck.leaderId,
+                              deck.leaderImageUrl,
+                            ),
+                          }}
                           placeholder={require("../../assets/images/leader-card-back.png")}
                           transition={200}
                           style={styles.deckImage}
@@ -512,7 +526,9 @@ export default function StatisticsMenu() {
                       ]}
                     >
                       <Image
-                        source={{ uri: cardImageUrl(leader.id) }}
+                        source={{
+                          uri: resolveCardImage(leader.id, leader.imageUrl),
+                        }}
                         placeholder={require("../../assets/images/leader-card-back.png")}
                         transition={200}
                         style={styles.leaderFilterImage}
@@ -670,7 +686,9 @@ export default function StatisticsMenu() {
                 >
                   <View style={styles.matchupLeft}>
                     <Image
-                      source={{ uri: cardImageUrl(opp.oppId) }}
+                      source={{
+                        uri: resolveCardImage(opp.oppId, opp.oppImageUrl),
+                      }}
                       placeholder={require("../../assets/images/leader-card-back.png")}
                       transition={200}
                       style={styles.matchupImage}

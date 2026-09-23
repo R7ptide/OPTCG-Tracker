@@ -51,6 +51,55 @@ export const getSetCompletionStats = (): Record<
   return stats;
 };
 
+export type SetPlaysetCompletionRow = {
+  set_id: string;
+  total_bases: number;
+  complete_bases: number;
+};
+
+// Player-mode completion: groups art variants of the same card (ids sharing
+// a "-###" prefix before "_") into one base card, sums owned quantity across
+// variants, and counts a base card "complete" once it hits a full playset
+// (1 copy for Leaders, 4 for everything else) regardless of which variant(s)
+// make up that count.
+export const getSetPlaysetCompletionStats = (): Record<
+  string,
+  { totalBases: number; completeBases: number }
+> => {
+  const rows = db.getAllSync<SetPlaysetCompletionRow>(`
+    WITH base_groups AS (
+      SELECT
+        c.set_id AS set_id,
+        CASE
+          WHEN instr(c.id, '_') > 0 THEN substr(c.id, 1, instr(c.id, '_') - 1)
+          ELSE c.id
+        END AS base_id,
+        MAX(c.type) AS type,
+        SUM(COALESCE(col.quantity, 0)) AS owned_qty
+      FROM cards c
+      LEFT JOIN collection col ON col.card_id = c.id
+      GROUP BY c.set_id, base_id
+    )
+    SELECT
+      set_id,
+      COUNT(*) AS total_bases,
+      COUNT(CASE
+        WHEN owned_qty >= (CASE WHEN type = 'Leader' THEN 1 ELSE 4 END) THEN 1
+      END) AS complete_bases
+    FROM base_groups
+    GROUP BY set_id
+  `);
+  const stats: Record<string, { totalBases: number; completeBases: number }> =
+    {};
+  for (const row of rows) {
+    stats[row.set_id] = {
+      totalBases: row.total_bases,
+      completeBases: row.complete_bases,
+    };
+  }
+  return stats;
+};
+
 export type OwnedRow = { card_id: string; quantity: number };
 
 export const getOwnedForSet = (setId: string): OwnedRow[] => {

@@ -1,19 +1,9 @@
 import { type CardRow } from "../database";
 import { upsertCards } from "../repositories/cards";
+import { MANUAL_CARDS, type PunkRecordCard } from "../constants/manualCards";
 
 const CARDS_JSON_URL =
   "https://raw.githubusercontent.com/buhbbl/punk-records/main/english/index/cards_by_id.json";
-
-type PunkRecordCard = {
-  name?: string;
-  colors?: string[];
-  category?: string;
-  cost?: number;
-  power?: number;
-  attributes?: string[];
-  rarity?: string;
-  img_full_url?: string;
-};
 
 type PunkRecordDict = Record<string, PunkRecordCard>;
 
@@ -24,10 +14,14 @@ export const useSync = () => {
       const response = await fetch(CARDS_JSON_URL);
       const cardsData: PunkRecordDict = await response.json();
 
-      const cardEntries = Object.entries(cardsData);
+      const manualEntries = Object.entries(MANUAL_CARDS).filter(
+        ([cardId]) => !cardsData[cardId],
+      );
+      const cardEntries = [...Object.entries(cardsData), ...manualEntries];
 
       console.log(
-        `Downloaded ${cardEntries.length} cards. Updating database...`,
+        `Downloaded ${cardEntries.length - manualEntries.length} cards from punk-records, ` +
+          `added ${manualEntries.length} manual entries. Updating database...`,
       );
 
       const cards: CardRow[] = cardEntries
@@ -41,8 +35,9 @@ export const useSync = () => {
           power: card.power ?? 0,
           attribute: card.attributes ? card.attributes.join("/") : "",
           rarity: card.rarity ?? "",
-          image_url: card.img_full_url ?? "",
+          image_url: card.img_url ?? "",
           set_id: cardId.split("-")[0],
+          traits: card.types ? card.types.join("/") : "",
         }));
 
       upsertCards(cards);
