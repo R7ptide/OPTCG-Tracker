@@ -20,7 +20,7 @@ import { type MasterCardRow } from "../../repositories/cards";
 import LeaderPicker from "../../components/LeaderPicker";
 import FormatPicker from "../../components/FormatPicker";
 import { toDateString, formatDateDisplay } from "../../utils/date";
-import { cardImageUrl } from "../../utils/cards";
+import { resolveCardImage } from "../../utils/cards";
 import { parsePlacementInput } from "../../utils/placement";
 import {
   radius,
@@ -145,7 +145,7 @@ export default function NewTournament() {
           {leader ? (
             <>
               <Image
-                source={{ uri: cardImageUrl(leader.id) }}
+                source={{ uri: resolveCardImage(leader.id, leader.image_url) }}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.leaderThumb}

@@ -6,6 +6,8 @@ export type SettingsContextValue = {
   setShowMissing: (val: boolean) => void;
   isLightMode: boolean;
   toggleLightMode: () => void;
+  isPlayerMode: boolean;
+  toggleIsPlayerMode: () => void;
   colors: ThemeColors;
 };
 

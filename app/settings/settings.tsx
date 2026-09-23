@@ -32,8 +32,15 @@ import {
 } from "../../constants/theme";
 
 export default function Settings() {
-  const { showMissing, setShowMissing, isLightMode, toggleLightMode, colors } =
-    useSettings();
+  const {
+    showMissing,
+    setShowMissing,
+    isLightMode,
+    toggleLightMode,
+    isPlayerMode,
+    toggleIsPlayerMode,
+    colors,
+  } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     isLinked,
@@ -222,6 +229,50 @@ export default function Settings() {
       >
         <Text style={styles.header}>Profile</Text>
 
+        <View style={styles.segmentedControl}>
+          <TouchableOpacity
+            style={[
+              styles.segmentOption,
+              isPlayerMode && styles.segmentOptionActive,
+            ]}
+            onPress={() => {
+              if (!isPlayerMode) toggleIsPlayerMode();
+            }}
+          >
+            <Text
+              style={[
+                styles.segmentLabel,
+                isPlayerMode && styles.segmentLabelActive,
+              ]}
+            >
+              Player
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.segmentOption,
+              !isPlayerMode && styles.segmentOptionActive,
+            ]}
+            onPress={() => {
+              if (isPlayerMode) toggleIsPlayerMode();
+            }}
+          >
+            <Text
+              style={[
+                styles.segmentLabel,
+                !isPlayerMode && styles.segmentLabelActive,
+              ]}
+            >
+              Collector
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.description}>
+          {isPlayerMode
+            ? "Set completion counts playsets (4 copies, 1 for Leaders) across any art variant, ignoring alt arts."
+            : "Set completion counts every individual card, including alt art variants."}
+        </Text>
+
         <View style={styles.toggleRow}>
           <Text style={styles.toggleLabel}>Light Mode</Text>
           <Switch
@@ -383,6 +434,33 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: "bold",
       marginBottom: spacing.lg,
       marginTop: spacing.sm,
+    },
+    segmentedControl: {
+      flexDirection: "row",
+      backgroundColor: colors.surface,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 4,
+      marginBottom: spacing.sm,
+    },
+    segmentOption: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.sm - 2,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    segmentOptionActive: {
+      backgroundColor: colors.primary,
+    },
+    segmentLabel: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.md,
+      fontWeight: "bold",
+    },
+    segmentLabelActive: {
+      color: colors.text,
     },
     toggleRow: {
       flexDirection: "row",

@@ -10,12 +10,18 @@ import { getSetting, setSetting } from "../repositories/settings";
 
 const SHOW_MISSING_KEY = "showMissing";
 const LIGHT_MODE_KEY = "isLightMode";
+const PLAYER_MODE_KEY = "isPlayerMode";
 
-type PersistedSettings = { showMissing: boolean; isLightMode: boolean };
+type PersistedSettings = {
+  showMissing: boolean;
+  isLightMode: boolean;
+  isPlayerMode: boolean;
+};
 
 const DEFAULT_SETTINGS: PersistedSettings = {
   showMissing: true,
   isLightMode: false,
+  isPlayerMode: false,
 };
 
 function LayoutContent() {
@@ -23,7 +29,7 @@ function LayoutContent() {
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<Error | null>(null);
 
-  const { showMissing, isLightMode } = settings;
+  const { showMissing, isLightMode, isPlayerMode } = settings;
   const colors = isLightMode ? lightColors : darkColors;
 
   const setShowMissing = (val: boolean) => {
@@ -39,15 +45,25 @@ function LayoutContent() {
     });
   };
 
+  const toggleIsPlayerMode = () => {
+    setSettings((prev) => {
+      const next = { ...prev, isPlayerMode: !prev.isPlayerMode };
+      setSetting(PLAYER_MODE_KEY, String(next.isPlayerMode));
+      return next;
+    });
+  };
+
   const contextValue = useMemo(
     () => ({
       showMissing,
       setShowMissing,
       isLightMode,
       toggleLightMode,
+      isPlayerMode,
+      toggleIsPlayerMode,
       colors,
     }),
-    [showMissing, isLightMode, colors],
+    [showMissing, isLightMode, isPlayerMode, colors],
   );
 
   useEffect(() => {
@@ -55,6 +71,7 @@ function LayoutContent() {
       initDB();
       const storedShowMissing = getSetting(SHOW_MISSING_KEY);
       const storedLightMode = getSetting(LIGHT_MODE_KEY);
+      const storedPlayerMode = getSetting(PLAYER_MODE_KEY);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time DB hydration on mount, not derived render state
       setSettings({
         showMissing:
@@ -65,6 +82,10 @@ function LayoutContent() {
           storedLightMode !== null
             ? storedLightMode === "true"
             : DEFAULT_SETTINGS.isLightMode,
+        isPlayerMode:
+          storedPlayerMode !== null
+            ? storedPlayerMode === "true"
+            : DEFAULT_SETTINGS.isPlayerMode,
       });
       setDbReady(true);
     } catch (err) {

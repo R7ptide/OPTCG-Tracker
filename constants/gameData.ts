@@ -9,7 +9,7 @@ const range = (count: number, prefix: string): string[] =>
 export const fetchGameData = async () => {
   try {
     const url = `http://api.100.95.187.118.nip.io/expansions`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
     const data = await response.json();
 
     await AsyncStorage.setItem("@game_data", JSON.stringify(data));

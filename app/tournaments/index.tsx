@@ -17,7 +17,7 @@ import {
   type TournamentWithRecord,
 } from "../../repositories/tournaments";
 import { formatDateDisplay } from "../../utils/date";
-import { cardImageUrl } from "../../utils/cards";
+import { resolveCardImage } from "../../utils/cards";
 import { useAvailableFormats } from "../../hooks/useAvailableFormats";
 import {
   radius,
@@ -110,7 +110,9 @@ export default function TournamentList() {
           >
             {item.leader_id ? (
               <Image
-                source={{ uri: cardImageUrl(item.leader_id) }}
+                source={{
+                  uri: resolveCardImage(item.leader_id, item.leaderImageUrl),
+                }}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.leaderThumb}

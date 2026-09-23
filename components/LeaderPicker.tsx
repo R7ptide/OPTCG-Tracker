@@ -18,7 +18,7 @@ import {
   type ThemeColors,
 } from "../constants/theme";
 import { useSettings } from "../contexts/SettingsContext";
-import { cardImageUrl } from "../utils/cards";
+import { resolveCardImage } from "../utils/cards";
 
 type Props = {
   visible: boolean;
@@ -91,7 +91,7 @@ export default function LeaderPicker({ visible, onClose, onSelect }: Props) {
               onPress={() => handleSelect(item)}
             >
               <Image
-                source={{ uri: cardImageUrl(item.id) }}
+                source={{ uri: resolveCardImage(item.id, item.image_url) }}
                 placeholder={require("../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.cardImage}
