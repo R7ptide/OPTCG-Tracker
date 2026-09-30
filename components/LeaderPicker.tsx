@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { getAllLeaders, type MasterCardRow } from "../repositories/cards";
 import {
@@ -29,6 +30,7 @@ type Props = {
 export default function LeaderPicker({ visible, onClose, onSelect }: Props) {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
 
   const leaders = useMemo(() => (visible ? getAllLeaders() : []), [visible]);
@@ -49,7 +51,7 @@ export default function LeaderPicker({ visible, onClose, onSelect }: Props) {
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
           <Text style={styles.title}>Select Leader</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={colors.text} />

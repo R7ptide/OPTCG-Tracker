@@ -25,6 +25,7 @@ const makeCard = (overrides: Partial<CardRow> & { id: string }): CardRow => ({
   image_url: null,
   set_id: null,
   traits: null,
+  counter: null,
   ...overrides,
 });
 

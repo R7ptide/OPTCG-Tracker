@@ -12,6 +12,9 @@ import { useCallback, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../../../contexts/SettingsContext";
 import CardModal, { type CollectionCard } from "../../../components/CardModal";
+import CardFilterDrawer, {
+  type CardFilterGroup,
+} from "../../../components/CardFilterDrawer";
 import {
   getDeckCards,
   getDeckSummaryById,
@@ -21,12 +24,17 @@ import {
 } from "../../../repositories/decks";
 import {
   getCardById,
+  getCardsByColors,
   searchCardsByName,
   type MasterCardRow,
 } from "../../../repositories/cards";
-import { getSetLabel, resolveCardImage } from "../../../utils/cards";
+import {
+  getSetLabel,
+  isAlternateArt,
+  resolveCardImage,
+} from "../../../utils/cards";
 import { DECK_SIZE, getCardCopyLimit } from "../../../constants/deckRules";
-import { isColorLegal } from "../../../utils/deckValidation";
+import { isColorLegal, splitColors } from "../../../utils/deckValidation";
 import {
   radius,
   spacing,
@@ -41,6 +49,30 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "search", label: "Search Cards" },
 ];
 
+type FilterKey = "type" | "rarity" | "cost" | "counter";
+
+const FILTER_GROUPS: readonly CardFilterGroup[] = [
+  { key: "type", label: "Card Type", options: ["Character", "Event", "Stage"] },
+  {
+    key: "rarity",
+    label: "Rarity",
+    options: ["C", "UC", "R", "SR", "SEC", "SP", "TR"],
+  },
+  {
+    key: "cost",
+    label: "Cost",
+    options: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+  },
+  { key: "counter", label: "Counter", options: ["1000", "2000"] },
+];
+
+const EMPTY_FILTERS: Record<FilterKey, string[]> = {
+  type: [],
+  rarity: [],
+  cost: [],
+  counter: [],
+};
+
 export default function DeckDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const deckId = Number(id);
@@ -53,6 +85,20 @@ export default function DeckDetail() {
   const [activeTab, setActiveTab] = useState<Tab>("deck");
   const [query, setQuery] = useState("");
   const [selectedCard, setSelectedCard] = useState<MasterCardRow | null>(null);
+  const [filters, setFilters] =
+    useState<Record<FilterKey, string[]>>(EMPTY_FILTERS);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  const toggleFilter = (key: string, value: string) => {
+    setFilters((prev) => {
+      const k = key as FilterKey;
+      const arr = prev[k];
+      const next = arr.includes(value)
+        ? arr.filter((v) => v !== value)
+        : [...arr, value];
+      return { ...prev, [k]: next };
+    });
+  };
 
   const reload = useCallback(() => {
     const summary = getDeckSummaryById(deckId);
@@ -75,10 +121,39 @@ export default function DeckDetail() {
     return map;
   }, [deckCards]);
 
+  const activeFilterCount = Object.values(filters).reduce(
+    (sum, arr) => sum + arr.length,
+    0,
+  );
+
   const searchResults = useMemo(() => {
-    if (!query.trim()) return [];
-    return searchCardsByName(query).filter((c) => c.type !== "Leader");
-  }, [query]);
+    const trimmed = query.trim();
+    const pool = trimmed
+      ? searchCardsByName(trimmed)
+      : getCardsByColors(splitColors(leaderCard?.color));
+
+    return pool.filter((c) => {
+      if (c.type === "Leader") return false;
+      if (isAlternateArt(c.id)) return false;
+      if (!isColorLegal(c.color, leaderCard?.color)) return false;
+      if (filters.type.length && !filters.type.includes(c.type ?? "")) {
+        return false;
+      }
+      if (filters.rarity.length && !filters.rarity.includes(c.rarity ?? "")) {
+        return false;
+      }
+      if (filters.cost.length && !filters.cost.includes(String(c.cost ?? ""))) {
+        return false;
+      }
+      if (
+        filters.counter.length &&
+        !filters.counter.includes(String(c.counter ?? ""))
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [query, leaderCard, filters]);
 
   const adjustQuantity = (card: MasterCardRow, delta: number) => {
     const current = quantities[card.id] ?? 0;
@@ -114,7 +189,11 @@ export default function DeckDetail() {
     >
       <Image
         source={{ uri: resolveCardImage(card.id, card.image_url) }}
-        placeholder={require("../../../assets/images/leader-card-back.png")}
+        placeholder={
+          card.type === "Leader"
+            ? require("../../../assets/images/leader-card-back.png")
+            : require("../../../assets/images/card-back.png")
+        }
         transition={200}
         style={styles.cardImage}
         contentFit="contain"
@@ -125,45 +204,6 @@ export default function DeckDetail() {
       </View>
     </TouchableOpacity>
   );
-
-  const renderCardRow = (card: MasterCardRow, quantity: number) => {
-    const legal = isColorLegal(card.color, leaderCard?.color);
-    return (
-      <View key={card.id} style={styles.cardRow}>
-        <Image
-          source={{ uri: resolveCardImage(card.id, card.image_url) }}
-          placeholder={require("../../../assets/images/leader-card-back.png")}
-          transition={200}
-          style={styles.cardThumb}
-          contentFit="contain"
-          cachePolicy="memory-disk"
-        />
-        <View style={styles.cardRowInfo}>
-          <Text style={styles.cardRowName} numberOfLines={1}>
-            {card.name}
-          </Text>
-          {!legal && (
-            <Text style={styles.cardRowWarning}>Wrong color for leader</Text>
-          )}
-        </View>
-        <View style={styles.stepper}>
-          <TouchableOpacity
-            style={styles.stepperButton}
-            onPress={() => adjustQuantity(card, -1)}
-          >
-            <Ionicons name="remove" size={18} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.stepperCount}>{quantity}</Text>
-          <TouchableOpacity
-            style={styles.stepperButton}
-            onPress={() => adjustQuantity(card, 1)}
-          >
-            <Ionicons name="add" size={18} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
 
   return (
     <View style={styles.container}>
@@ -247,24 +287,38 @@ export default function DeckDetail() {
       </View>
 
       {activeTab === "search" && (
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color={colors.placeholder} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name, attribute, trait..."
-            placeholderTextColor={colors.placeholder}
-            value={query}
-            onChangeText={setQuery}
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")}>
-              <Ionicons
-                name="close-circle"
-                size={18}
-                color={colors.placeholder}
-              />
-            </TouchableOpacity>
-          )}
+        <View style={styles.searchRow}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={18} color={colors.placeholder} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by name, attribute, trait..."
+              placeholderTextColor={colors.placeholder}
+              value={query}
+              onChangeText={setQuery}
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setQuery("")}>
+                <Ionicons
+                  name="close-circle"
+                  size={18}
+                  color={colors.placeholder}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setFilterDrawerOpen(true)}
+          >
+            <Ionicons name="filter" size={20} color={colors.text} />
+            {activeFilterCount > 0 && (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
       )}
 
@@ -272,7 +326,7 @@ export default function DeckDetail() {
         key={activeTab}
         style={styles.flatList}
         contentContainerStyle={styles.listContent}
-        numColumns={activeTab === "deck" ? 3 : 1}
+        numColumns={activeTab === "search" ? 4 : 3}
         data={
           activeTab === "search"
             ? searchResults
@@ -282,16 +336,14 @@ export default function DeckDetail() {
         }
         keyExtractor={(item) => item.id}
         renderItem={({ item }) =>
-          activeTab === "deck"
-            ? renderGridCard(item, quantities[item.id] ?? 0)
-            : renderCardRow(item, quantities[item.id] ?? 0)
+          renderGridCard(item, quantities[item.id] ?? 0)
         }
         ListEmptyComponent={
           <Text style={styles.emptyText}>
             {activeTab === "search"
-              ? query.trim()
+              ? leaderCard
                 ? "No cards found."
-                : "Search above to add cards."
+                : "Pick a leader first to browse cards."
               : "No cards in this deck yet. Use Search Cards to add some."}
           </Text>
         }
@@ -303,6 +355,14 @@ export default function DeckDetail() {
         onIncrement={() => selectedCard && adjustQuantity(selectedCard, 1)}
         onDecrement={() => selectedCard && adjustQuantity(selectedCard, -1)}
         quantityLabel="In Deck"
+      />
+
+      <CardFilterDrawer
+        isOpen={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        groups={FILTER_GROUPS}
+        isActive={(key, opt) => filters[key as FilterKey].includes(opt)}
+        onToggle={toggleFilter}
       />
     </View>
   );
@@ -365,17 +425,47 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: "bold",
     },
     tabTextActive: { color: colors.text },
+    searchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      margin: spacing.md,
+      marginBottom: 0,
+    },
     searchBar: {
+      flex: 1,
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.xs,
       backgroundColor: colors.surface,
-      margin: spacing.md,
-      marginBottom: 0,
       paddingHorizontal: spacing.md,
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    filterButton: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.sm,
+    },
+    filterBadge: {
+      position: "absolute",
+      top: -4,
+      right: -4,
+      backgroundColor: colors.primary,
+      borderRadius: radius.pill,
+      minWidth: 16,
+      height: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 2,
+    },
+    filterBadgeText: {
+      color: "#fff",
+      fontSize: 10,
+      fontWeight: "bold",
     },
     searchInput: {
       flex: 1,
@@ -385,25 +475,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     flatList: { flex: 1 },
     listContent: { padding: spacing.md, paddingBottom: spacing.xxl },
-    cardRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-      backgroundColor: colors.surface,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: spacing.sm,
-      marginBottom: spacing.xs,
-    },
-    cardThumb: { width: 36, height: 50, borderRadius: radius.sm },
-    cardRowInfo: { flex: 1 },
-    cardRowName: {
-      color: colors.text,
-      fontSize: typography.sizes.md,
-      fontWeight: "bold",
-    },
-    cardRowWarning: { color: colors.warning, fontSize: typography.sizes.xs },
     cardSlot: {
       flex: 1,
       margin: spacing.xs,
@@ -426,19 +497,6 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.text,
       fontSize: typography.sizes.sm,
       fontWeight: "bold",
-    },
-    stepper: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-    stepperButton: {
-      backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.sm,
-      padding: spacing.xs,
-    },
-    stepperCount: {
-      color: colors.text,
-      fontSize: typography.sizes.md,
-      fontWeight: "bold",
-      minWidth: 20,
-      textAlign: "center",
     },
     emptyText: {
       color: colors.textMuted,

@@ -14,6 +14,7 @@ export type CardRow = {
   image_url: string | null;
   set_id: string | null;
   traits: string | null;
+  counter: number | null;
 };
 
 export type CollectionRow = {
@@ -170,6 +171,11 @@ const MIGRATIONS: Migration[] = [
 
       CREATE INDEX IF NOT EXISTS idx_deck_cards_deck_id ON deck_cards (deck_id);
     `);
+  },
+  (db) => {
+    if (!hasColumn(db, "cards", "counter")) {
+      db.execSync(`ALTER TABLE cards ADD COLUMN counter INTEGER;`);
+    }
   },
 ];
 

@@ -10,3 +10,8 @@ export const resolveCardImage = (
 ): string => storedUrl || cardImageUrl(cardId);
 
 export const getSetLabel = (cardId: string): string => cardId.split("-")[0] ?? "";
+
+// Alt-art/parallel (`_p1`) and manually-added illustration variants (`_m1`)
+// share the same base "SET-NUM" id with a suffix appended.
+export const isAlternateArt = (cardId: string): boolean =>
+  /_[pm]\d+$/.test(cardId);
