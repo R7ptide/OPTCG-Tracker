@@ -23,17 +23,7 @@ export type PunkRecordCard = {
 };
 
 export const MANUAL_CARDS: Record<string, PunkRecordCard> = {
-  // "OP01-001_p3": {
-  //   name: "Monkey.D.Luffy",
-  //   colors: ["Red"],
-  //   category: "Leader",
-  //   cost: 0,
-  //   power: 5000,
-  //   attributes: ["Strike"],
-  //   rarity: "SEC",
-  //   img_url: "https://example.com/OP01-001_p3.png",
-  //   types: ["Straw Hat Crew"],
-  // },
+  // ----- ILUSTRATION BOX -----
   "ST17-004_m1": {
     attributes: ["Special"],
     card_id: "ST17-004",
@@ -49,6 +39,86 @@ export const MANUAL_CARDS: Record<string, PunkRecordCard> = {
     power: 6000,
     rarity: "SuperRare",
     types: ["The Seven Warlords of the Sea", "Kuja Pirates"],
+  },
+  "OP05-062_m1": {
+    attributes: ["Special"],
+    card_id: "OP05-062",
+    category: "Character",
+    colors: ["Purple"],
+    cost: 1,
+    counter: 1000,
+    img_url:
+      "https://en.onepiece-cardgame.com/images/products/other/ib01/OP05-062.png",
+    keywords: ["Blocker"],
+    name: "O-Nami",
+    pack_id: "569105",
+    power: 1000,
+    rarity: "Uncommon",
+    types: ["Straw Hat Crew"],
+  },
+  "OP08-074_m1": {
+    attributes: ["Special"],
+    card_id: "OP08-074",
+    category: "Character",
+    colors: ["Purple"],
+    cost: 3,
+    counter: 2000,
+    img_url:
+      "https://en.onepiece-cardgame.com/images/products/other/ib02/OP08-074.png",
+    keywords: ["Activate: Main", "Once Per Turn"],
+    name: "Black Maria",
+    pack_id: "569108",
+    power: 2000,
+    rarity: "SuperRare",
+    types: ["Animal Kingdom Pirates"],
+  },
+  "ST13-016_m1": {
+    attributes: ["Strike"],
+    card_id: "ST13-016",
+    category: "Character",
+    colors: ["Yellow"],
+    cost: 5,
+    counter: 2000,
+    img_url:
+      "https://en.onepiece-cardgame.com/images/products/other/ib02/ST13-016.png",
+    keywords: ["Rush", "On Play"],
+    name: "Yamato",
+    pack_id: "569013",
+    power: 4000,
+    rarity: "Common",
+    types: ["Land of Wano"],
+  },
+  "OP07-109_m1": {
+    attributes: ["Strike"],
+    card_id: "OP07-109",
+    category: "Character",
+    colors: ["Yellow"],
+    cost: 5,
+    counter: 1000,
+    img_url:
+      "https://en.onepiece-cardgame.com/images/products/other/ib03/OP07-109.png",
+    keywords: ["Activate: Main"],
+    name: "Monkey.D.Luffy",
+    pack_id: "569107",
+    power: 6000,
+    rarity: "SuperRare",
+    types: ["The Four Emperors", "Egghead", "Straw Hat Crew"],
+  },
+  "OP07-113_m1": {
+    attributes: ["Slash"],
+    card_id: "OP07-113",
+    category: "Character",
+    colors: ["Yellow"],
+    cost: 5,
+    counter: 1000,
+    img_url:
+      "https://en.onepiece-cardgame.com/images/products/other/ib03/OP07-113.png",
+    keywords: [],
+    name: "Roronoa Zoro",
+    pack_id: "569107",
+    power: 6000,
+    rarity: "Uncommon",
+    types: ["Egghead", "Straw Hat Crew"],
   },
   "ST12-003_m1": {
     attributes: ["Slash"],
@@ -82,4 +152,5 @@ export const MANUAL_CARDS: Record<string, PunkRecordCard> = {
     rarity: "Rare",
     types: ["Muggy Kingdom", "Thriller Bark Pirates"],
   },
+  // ----- ILUSTRATION BOX -----
 };
