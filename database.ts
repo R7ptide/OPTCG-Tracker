@@ -32,6 +32,20 @@ export type TournamentRow = {
   created_at: string;
 };
 
+export type DeckRow = {
+  id: number;
+  name: string;
+  leader_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DeckCardRow = {
+  deck_id: number;
+  card_id: string;
+  quantity: number;
+};
+
 export type MatchResult = "W" | "L" | "BYE";
 
 export type MatchRow = {
@@ -134,6 +148,28 @@ const MIGRATIONS: Migration[] = [
     if (!hasColumn(db, "cards", "traits")) {
       db.execSync(`ALTER TABLE cards ADD COLUMN traits TEXT;`);
     }
+  },
+  (db) => {
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS decks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        leader_id TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS deck_cards (
+        deck_id INTEGER NOT NULL,
+        card_id TEXT NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY (deck_id, card_id),
+        FOREIGN KEY (deck_id) REFERENCES decks (id) ON DELETE CASCADE,
+        FOREIGN KEY (card_id) REFERENCES cards (id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_deck_cards_deck_id ON deck_cards (deck_id);
+    `);
   },
 ];
 

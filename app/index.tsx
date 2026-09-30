@@ -182,17 +182,21 @@ export default function Home() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.actionRow}>
-        {/*<TouchableOpacity
-          style={styles.smallButton}
+      <View style={styles.stackedButtons}>
+        <TouchableOpacity
+          style={[
+            styles.smallButton,
+            styles.fullWidthButton,
+            { backgroundColor: colors.surfaceAlt },
+          ]}
           onPress={() => router.push("/decks")}
         >
           <Ionicons name="albums-outline" size={28} color={colors.text} />
           <Text style={styles.smallButtonText}>Decks</Text>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.smallButton}
+          style={[styles.smallButton, styles.fullWidthButton]}
           onPress={() => router.push("/settings/settings")}
         >
           <Ionicons name="settings-outline" size={28} color={colors.text} />
@@ -208,7 +212,7 @@ const createStyles = (colors: ThemeColors) =>
     container: {
       flex: 1,
       backgroundColor: colors.bg,
-      justifyContent: "center",
+      justifyContent: "flex-start",
       padding: spacing.lg,
     },
     statsCard: {
@@ -295,6 +299,10 @@ const createStyles = (colors: ThemeColors) =>
       gap: spacing.sm,
       marginTop: spacing.sm,
     },
+    stackedButtons: {
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
     smallButton: {
       flex: 1,
       backgroundColor: colors.surface,
@@ -303,6 +311,10 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: "center",
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    fullWidthButton: {
+      flex: 0,
+      width: "100%",
     },
     smallButtonText: {
       color: colors.textMuted,
