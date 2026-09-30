@@ -29,6 +29,7 @@ type Props = {
   onClose: () => void;
   onIncrement: () => void;
   onDecrement: () => void;
+  quantityLabel?: string;
 };
 
 export default function CardModal({
@@ -36,6 +37,7 @@ export default function CardModal({
   onClose,
   onIncrement,
   onDecrement,
+  quantityLabel = "Owned",
 }: Props) {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -66,7 +68,7 @@ export default function CardModal({
               </TouchableOpacity>
               <View style={styles.qtyDisplay}>
                 <Text style={styles.qtyValue}>{card.quantity}</Text>
-                <Text style={styles.qtyLabel}>Owned</Text>
+                <Text style={styles.qtyLabel}>{quantityLabel}</Text>
               </View>
               <TouchableOpacity style={styles.circleBtn} onPress={onIncrement}>
                 <Text style={styles.circleBtnText}>+</Text>

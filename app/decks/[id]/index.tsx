@@ -11,6 +11,7 @@ import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router
 import { useCallback, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../../../contexts/SettingsContext";
+import CardModal, { type CollectionCard } from "../../../components/CardModal";
 import {
   getDeckCards,
   getDeckSummaryById,
@@ -51,6 +52,7 @@ export default function DeckDetail() {
   const [deckCards, setDeckCards] = useState<DeckCardWithInfo[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>("deck");
   const [query, setQuery] = useState("");
+  const [selectedCard, setSelectedCard] = useState<MasterCardRow | null>(null);
 
   const reload = useCallback(() => {
     const summary = getDeckSummaryById(deckId);
@@ -85,6 +87,44 @@ export default function DeckDetail() {
     setDeckCardQuantity(deckId, card.id, next);
     reload();
   };
+
+  const selectedCollectionCard = useMemo((): CollectionCard | null => {
+    if (!selectedCard) return null;
+    return {
+      id: selectedCard.id,
+      name: selectedCard.name ?? "",
+      color: selectedCard.color ?? "",
+      type: selectedCard.type ?? "",
+      rarity: selectedCard.rarity ?? "",
+      attribute: selectedCard.attribute ?? "",
+      traits: selectedCard.traits ?? "",
+      cost: selectedCard.cost,
+      imageUrl: resolveCardImage(selectedCard.id, selectedCard.image_url),
+      owned: true,
+      quantity: quantities[selectedCard.id] ?? 0,
+      playsetTotal: getCardCopyLimit(selectedCard.id),
+    };
+  }, [selectedCard, quantities]);
+
+  const renderGridCard = (card: MasterCardRow, quantity: number) => (
+    <TouchableOpacity
+      key={card.id}
+      style={styles.cardSlot}
+      onPress={() => setSelectedCard(card)}
+    >
+      <Image
+        source={{ uri: resolveCardImage(card.id, card.image_url) }}
+        placeholder={require("../../../assets/images/leader-card-back.png")}
+        transition={200}
+        style={styles.cardImage}
+        contentFit="contain"
+        cachePolicy="memory-disk"
+      />
+      <View style={styles.qtyBadge}>
+        <Text style={styles.qtyText}>x{quantity}</Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   const renderCardRow = (card: MasterCardRow, quantity: number) => {
     const legal = isColorLegal(card.color, leaderCard?.color);
@@ -229,8 +269,10 @@ export default function DeckDetail() {
       )}
 
       <FlatList
+        key={activeTab}
         style={styles.flatList}
         contentContainerStyle={styles.listContent}
+        numColumns={activeTab === "deck" ? 3 : 1}
         data={
           activeTab === "search"
             ? searchResults
@@ -240,7 +282,9 @@ export default function DeckDetail() {
         }
         keyExtractor={(item) => item.id}
         renderItem={({ item }) =>
-          renderCardRow(item, quantities[item.id] ?? 0)
+          activeTab === "deck"
+            ? renderGridCard(item, quantities[item.id] ?? 0)
+            : renderCardRow(item, quantities[item.id] ?? 0)
         }
         ListEmptyComponent={
           <Text style={styles.emptyText}>
@@ -251,6 +295,14 @@ export default function DeckDetail() {
               : "No cards in this deck yet. Use Search Cards to add some."}
           </Text>
         }
+      />
+
+      <CardModal
+        card={selectedCollectionCard}
+        onClose={() => setSelectedCard(null)}
+        onIncrement={() => selectedCard && adjustQuantity(selectedCard, 1)}
+        onDecrement={() => selectedCard && adjustQuantity(selectedCard, -1)}
+        quantityLabel="In Deck"
       />
     </View>
   );
@@ -352,6 +404,29 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: "bold",
     },
     cardRowWarning: { color: colors.warning, fontSize: typography.sizes.xs },
+    cardSlot: {
+      flex: 1,
+      margin: spacing.xs,
+      aspectRatio: 0.7,
+      borderRadius: radius.sm,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    cardImage: { width: "100%", height: "100%", borderRadius: radius.sm },
+    qtyBadge: {
+      position: "absolute",
+      bottom: spacing.xs,
+      right: spacing.xs,
+      backgroundColor: colors.overlayBadge,
+      borderRadius: radius.sm,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    qtyText: {
+      color: colors.text,
+      fontSize: typography.sizes.sm,
+      fontWeight: "bold",
+    },
     stepper: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
     stepperButton: {
       backgroundColor: colors.surfaceAlt,
