@@ -2,6 +2,8 @@ import { initDB } from "../../database";
 import db from "../../database";
 import type { CardRow } from "../../database";
 import {
+  getAllLeaders,
+  getCardsByColors,
   getTotalCardCount,
   getCardCountForSet,
   getCardsForSet,
@@ -88,5 +90,74 @@ describe("searchCardsByName", () => {
 
   it("respects the limit parameter", () => {
     expect(searchCardsByName("o", 1)).toHaveLength(1);
+  });
+});
+
+describe("getAllLeaders", () => {
+  beforeEach(() => {
+    upsertCards([
+      makeCard({ id: "OP01-001", name: "Luffy", type: "Leader" }),
+      makeCard({ id: "OP01-001_p1", name: "Luffy", type: "Leader" }),
+      makeCard({ id: "ST17-004_m1", name: "Manual Alt", type: "Leader" }),
+      makeCard({ id: "OP01-002", name: "Zoro", type: "Character" }),
+    ]);
+  });
+
+  it("only returns Leader-type cards", () => {
+    const leaders = getAllLeaders();
+    expect(leaders.every((l) => l.type === "Leader")).toBe(true);
+  });
+
+  it("excludes parallel and manually-added alt-art variants", () => {
+    const ids = getAllLeaders().map((l) => l.id);
+    expect(ids).toEqual(["OP01-001"]);
+  });
+});
+
+describe("getCardsByColors", () => {
+  beforeEach(() => {
+    upsertCards([
+      makeCard({ id: "OP01-001", name: "Luffy", type: "Leader", color: "Red" }),
+      makeCard({
+        id: "OP01-002",
+        name: "Zoro",
+        type: "Character",
+        color: "Red",
+        cost: 3,
+      }),
+      makeCard({
+        id: "OP01-003",
+        name: "Sanji",
+        type: "Character",
+        color: "Red/Green",
+        cost: 1,
+      }),
+      makeCard({
+        id: "OP01-004",
+        name: "Nami",
+        type: "Character",
+        color: "Blue",
+        cost: 2,
+      }),
+    ]);
+  });
+
+  it("returns an empty list when no colors are given", () => {
+    expect(getCardsByColors([])).toHaveLength(0);
+  });
+
+  it("matches cards sharing any of the given colors", () => {
+    const ids = getCardsByColors(["Red"]).map((c) => c.id);
+    expect(ids.sort()).toEqual(["OP01-002", "OP01-003"]);
+  });
+
+  it("excludes Leader-type cards even if the color matches", () => {
+    const ids = getCardsByColors(["Red"]).map((c) => c.id);
+    expect(ids).not.toContain("OP01-001");
+  });
+
+  it("orders results by cost ascending", () => {
+    const ids = getCardsByColors(["Red", "Blue"]).map((c) => c.id);
+    expect(ids).toEqual(["OP01-003", "OP01-004", "OP01-002"]);
   });
 });

@@ -73,6 +73,22 @@ const EMPTY_FILTERS: Record<FilterKey, string[]> = {
   counter: [],
 };
 
+const TYPE_SORT_ORDER: Record<string, number> = {
+  Character: 0,
+  Event: 1,
+  Stage: 2,
+};
+
+const byTypeThenCost = (
+  a: { type?: string | null; cost?: number | null },
+  b: { type?: string | null; cost?: number | null },
+): number => {
+  const typeDiff =
+    (TYPE_SORT_ORDER[a.type ?? ""] ?? 99) - (TYPE_SORT_ORDER[b.type ?? ""] ?? 99);
+  if (typeDiff !== 0) return typeDiff;
+  return (a.cost ?? 0) - (b.cost ?? 0);
+};
+
 export default function DeckDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const deckId = Number(id);
@@ -127,6 +143,8 @@ export default function DeckDetail() {
   );
 
   const searchResults = useMemo(() => {
+    if (activeTab !== "search") return [];
+
     const trimmed = query.trim();
     const pool = trimmed
       ? searchCardsByName(trimmed)
@@ -153,7 +171,7 @@ export default function DeckDetail() {
       }
       return true;
     });
-  }, [query, leaderCard, filters]);
+  }, [activeTab, query, leaderCard, filters]);
 
   const adjustQuantity = (card: MasterCardRow, delta: number) => {
     const current = quantities[card.id] ?? 0;
@@ -212,7 +230,7 @@ export default function DeckDetail() {
           title: deck?.name ?? "Deck",
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => router.push(`/decks/${deckId}/edit`)}
+              onPress={() => router.push(`/decks/${deckId}/settings`)}
               style={styles.headerIcon}
             >
               <Ionicons
@@ -330,9 +348,7 @@ export default function DeckDetail() {
         data={
           activeTab === "search"
             ? searchResults
-            : deckCards
-                .slice()
-                .sort((a, b) => (a.cost ?? 0) - (b.cost ?? 0))
+            : deckCards.slice().sort(byTypeThenCost)
         }
         keyExtractor={(item) => item.id}
         renderItem={({ item }) =>

@@ -168,6 +168,41 @@ export const getCollectionRowsForCards = (
   );
 };
 
+export type OwnedByBaseId = { base_id: string; owned: number };
+
+// Sums owned quantity across every art variant of a card (base art, parallel
+// `_p1`, manual `_m1`, ...) grouped back to its base "SET-NUM" id, since a
+// deck only ever tracks the base id but a collector may own any variant.
+export const getOwnedCountsForBaseIds = (
+  baseIds: string[],
+): Record<string, number> => {
+  if (baseIds.length === 0) return {};
+  const placeholders = baseIds.map(() => "?").join(", ");
+  const rows = db.getAllSync<OwnedByBaseId>(
+    `
+    WITH based AS (
+      SELECT
+        CASE
+          WHEN instr(card_id, '_') > 0 THEN substr(card_id, 1, instr(card_id, '_') - 1)
+          ELSE card_id
+        END AS base_id,
+        quantity
+      FROM collection
+    )
+    SELECT base_id, SUM(quantity) AS owned
+    FROM based
+    WHERE base_id IN (${placeholders})
+    GROUP BY base_id
+  `,
+    baseIds,
+  );
+  const map: Record<string, number> = {};
+  rows.forEach((row) => {
+    map[row.base_id] = row.owned;
+  });
+  return map;
+};
+
 export const wipeCollection = (): void => {
   db.runSync("DELETE FROM collection");
 };

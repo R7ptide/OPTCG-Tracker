@@ -1,4 +1,5 @@
 import db, { type CardRow } from "../database";
+import { isAlternateArt } from "../utils/cards";
 
 export const getTotalCardCount = (): number => {
   const row = db.getFirstSync<{ count: number }>(
@@ -47,9 +48,11 @@ export const getCardById = (id: string): MasterCardRow | null => {
 };
 
 export const getAllLeaders = (): MasterCardRow[] => {
-  return db.getAllSync<MasterCardRow>(
-    `SELECT ${MASTER_CARD_COLUMNS} FROM cards WHERE type = 'Leader' ORDER BY name ASC`,
-  );
+  return db
+    .getAllSync<MasterCardRow>(
+      `SELECT ${MASTER_CARD_COLUMNS} FROM cards WHERE type = 'Leader' ORDER BY name ASC`,
+    )
+    .filter((card) => !isAlternateArt(card.id));
 };
 
 // Matches against name, attribute (e.g. "Slash"), and traits (e.g. "Straw Hat Crew")

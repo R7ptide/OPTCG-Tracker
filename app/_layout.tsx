@@ -165,8 +165,12 @@ function LayoutContent() {
           <Stack.Screen name="decks/new" options={{ title: "New Deck" }} />
           <Stack.Screen name="decks/[id]/index" options={{ title: "Deck" }} />
           <Stack.Screen
-            name="decks/[id]/edit"
-            options={{ title: "Edit Deck" }}
+            name="decks/[id]/settings"
+            options={{ title: "Deck Settings" }}
+          />
+          <Stack.Screen
+            name="decks/[id]/missing"
+            options={{ title: "Missing Cards" }}
           />
 
           <Stack.Screen
