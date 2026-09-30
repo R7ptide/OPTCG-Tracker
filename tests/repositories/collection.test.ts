@@ -5,6 +5,7 @@ import {
   getCollectionStats,
   getSetOwnedCount,
   getOwnedForSet,
+  getOwnedCountsForBaseIds,
   getQuantity,
   incrementCard,
   decrementCard,
@@ -25,6 +26,7 @@ const makeCard = (overrides: Partial<CardRow> & { id: string }): CardRow => ({
   image_url: null,
   set_id: null,
   traits: null,
+  counter: null,
   ...overrides,
 });
 
@@ -108,6 +110,42 @@ describe("getSetOwnedCount / getOwnedForSet", () => {
       "OP01-001",
       "OP01-002",
     ]);
+  });
+});
+
+describe("getOwnedCountsForBaseIds", () => {
+  beforeEach(() => {
+    upsertCards([
+      makeCard({ id: "OP01-001_p1", set_id: "OP01" }),
+      makeCard({ id: "ST17-004_m1", set_id: "ST17" }),
+    ]);
+  });
+
+  it("sums quantity across base and alt-art variants under the base id", () => {
+    incrementCard("OP01-001");
+    incrementCard("OP01-001_p1");
+    incrementCard("OP01-001_p1");
+
+    expect(getOwnedCountsForBaseIds(["OP01-001"])).toEqual({
+      "OP01-001": 3,
+    });
+  });
+
+  it("returns an empty object when none of the requested base ids are owned", () => {
+    expect(getOwnedCountsForBaseIds(["OP01-001"])).toEqual({});
+  });
+
+  it("returns an empty object for an empty input list", () => {
+    expect(getOwnedCountsForBaseIds([])).toEqual({});
+  });
+
+  it("only includes base ids that were asked for", () => {
+    incrementCard("OP01-001");
+    incrementCard("OP01-002");
+
+    expect(getOwnedCountsForBaseIds(["OP01-001"])).toEqual({
+      "OP01-001": 1,
+    });
   });
 });
 

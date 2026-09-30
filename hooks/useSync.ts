@@ -38,6 +38,7 @@ export const useSync = () => {
           image_url: card.img_url ?? "",
           set_id: cardId.split("-")[0],
           traits: card.types ? card.types.join("/") : "",
+          counter: card.counter ?? null,
         }));
 
       upsertCards(cards);

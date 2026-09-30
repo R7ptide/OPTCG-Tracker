@@ -15,6 +15,8 @@ describe("initDB", () => {
     expect(tables).toEqual([
       "cards",
       "collection",
+      "deck_cards",
+      "decks",
       "matches",
       "settings",
       "tournaments",

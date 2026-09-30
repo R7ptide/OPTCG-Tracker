@@ -161,7 +161,17 @@ function LayoutContent() {
             options={{ title: "Search Tournaments" }}
           />
 
-          {/*<Stack.Screen name="decks" options={{ title: "Deck Builder" }} />*/}
+          <Stack.Screen name="decks/index" options={{ title: "My Decks" }} />
+          <Stack.Screen name="decks/new" options={{ title: "New Deck" }} />
+          <Stack.Screen name="decks/[id]/index" options={{ title: "Deck" }} />
+          <Stack.Screen
+            name="decks/[id]/settings"
+            options={{ title: "Deck Settings" }}
+          />
+          <Stack.Screen
+            name="decks/[id]/missing"
+            options={{ title: "Missing Cards" }}
+          />
 
           <Stack.Screen
             name="settings/settings"

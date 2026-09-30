@@ -1,4 +1,5 @@
 import db, { type CardRow } from "../database";
+import { isAlternateArt } from "../utils/cards";
 
 export const getTotalCardCount = (): number => {
   const row = db.getFirstSync<{ count: number }>(
@@ -26,10 +27,11 @@ export type MasterCardRow = Pick<
   | "image_url"
   | "attribute"
   | "traits"
+  | "counter"
 >;
 
 const MASTER_CARD_COLUMNS =
-  "id, name, color, type, cost, rarity, image_url, attribute, traits";
+  "id, name, color, type, cost, rarity, image_url, attribute, traits, counter";
 
 export const getCardsForSet = (setId: string): MasterCardRow[] => {
   return db.getAllSync<MasterCardRow>(
@@ -46,9 +48,11 @@ export const getCardById = (id: string): MasterCardRow | null => {
 };
 
 export const getAllLeaders = (): MasterCardRow[] => {
-  return db.getAllSync<MasterCardRow>(
-    `SELECT ${MASTER_CARD_COLUMNS} FROM cards WHERE type = 'Leader' ORDER BY name ASC`,
-  );
+  return db
+    .getAllSync<MasterCardRow>(
+      `SELECT ${MASTER_CARD_COLUMNS} FROM cards WHERE type = 'Leader' ORDER BY name ASC`,
+    )
+    .filter((card) => !isAlternateArt(card.id));
 };
 
 // Matches against name, attribute (e.g. "Slash"), and traits (e.g. "Straw Hat Crew")
@@ -66,12 +70,30 @@ export const searchCardsByName = (
   );
 };
 
+// Lets a deck builder browse every non-leader card matching a leader's
+// color(s) without typing a name first, so cost/counter filters alone can
+// narrow the full pool.
+export const getCardsByColors = (
+  colors: string[],
+  limit = 500,
+): MasterCardRow[] => {
+  if (colors.length === 0) return [];
+  const conditions = colors.map(() => "color LIKE ?").join(" OR ");
+  const params = colors.map((c) => `%${c}%`);
+  return db.getAllSync<MasterCardRow>(
+    `SELECT ${MASTER_CARD_COLUMNS} FROM cards
+     WHERE type != 'Leader' AND (${conditions})
+     ORDER BY cost ASC, name ASC LIMIT ?`,
+    [...params, limit],
+  );
+};
+
 export const upsertCards = (cards: CardRow[]): void => {
   db.withTransactionSync(() => {
     const insertStmt = db.prepareSync(`
       INSERT OR REPLACE INTO cards
-      (id, name, color, type, cost, power, attribute, rarity, image_url, set_id, traits)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, name, color, type, cost, power, attribute, rarity, image_url, set_id, traits, counter)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     try {
@@ -88,6 +110,7 @@ export const upsertCards = (cards: CardRow[]): void => {
           card.image_url,
           card.set_id,
           card.traits,
+          card.counter,
         ]);
       }
     } finally {
