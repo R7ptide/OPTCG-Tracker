@@ -57,34 +57,28 @@ export const getAllLeaders = (): MasterCardRow[] => {
 
 // Matches against name, attribute (e.g. "Slash"), and traits (e.g. "Straw Hat Crew")
 // so one search bar covers all three without a separate filter control.
-export const searchCardsByName = (
-  name: string,
-  limit = 100,
-): MasterCardRow[] => {
+export const searchCardsByName = (name: string): MasterCardRow[] => {
   const term = `%${name}%`;
   return db.getAllSync<MasterCardRow>(
     `SELECT ${MASTER_CARD_COLUMNS} FROM cards
      WHERE name LIKE ? OR attribute LIKE ? OR traits LIKE ?
-     ORDER BY name ASC LIMIT ?`,
-    [term, term, term, limit],
+     ORDER BY name ASC`,
+    [term, term, term],
   );
 };
 
 // Lets a deck builder browse every non-leader card matching a leader's
 // color(s) without typing a name first, so cost/counter filters alone can
 // narrow the full pool.
-export const getCardsByColors = (
-  colors: string[],
-  limit = 500,
-): MasterCardRow[] => {
+export const getCardsByColors = (colors: string[]): MasterCardRow[] => {
   if (colors.length === 0) return [];
   const conditions = colors.map(() => "color LIKE ?").join(" OR ");
   const params = colors.map((c) => `%${c}%`);
   return db.getAllSync<MasterCardRow>(
     `SELECT ${MASTER_CARD_COLUMNS} FROM cards
      WHERE type != 'Leader' AND (${conditions})
-     ORDER BY cost ASC, name ASC LIMIT ?`,
-    [...params, limit],
+     ORDER BY cost ASC, name ASC`,
+    params,
   );
 };
 

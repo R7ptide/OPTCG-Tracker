@@ -88,8 +88,13 @@ describe("searchCardsByName", () => {
     expect(searchCardsByName("Nefertari")).toHaveLength(0);
   });
 
-  it("respects the limit parameter", () => {
-    expect(searchCardsByName("o", 1)).toHaveLength(1);
+  it("does not cap the number of results", () => {
+    upsertCards(
+      Array.from({ length: 150 }, (_, i) =>
+        makeCard({ id: `OP09-${String(i).padStart(3, "0")}`, name: "Zzz Bulk" }),
+      ),
+    );
+    expect(searchCardsByName("Zzz Bulk")).toHaveLength(150);
   });
 });
 

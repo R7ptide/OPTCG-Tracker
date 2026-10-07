@@ -23,6 +23,7 @@ import {
 } from "../../../repositories/decks";
 import { getCardById, type MasterCardRow } from "../../../repositories/cards";
 import { resolveCardImage } from "../../../utils/cards";
+import { computeDeckStats } from "../../../utils/deckStats";
 import DeckExportView from "../../../components/DeckExportView";
 import { useSettings } from "../../../contexts/SettingsContext";
 import {
@@ -74,6 +75,9 @@ export default function DeckSettings() {
       reload();
     }, [reload]),
   );
+
+  const stats = useMemo(() => computeDeckStats(deckCards), [deckCards]);
+  const maxCurve = Math.max(1, ...stats.costCurve);
 
   const startEditingName = () => {
     setNameDraft(deck?.name ?? "");
@@ -191,6 +195,48 @@ export default function DeckSettings() {
         <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       </TouchableOpacity>
 
+      <View style={styles.statsCard}>
+        <Text style={styles.statsTitle}>Deck Stats</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{stats.counter2k}</Text>
+            <Text style={styles.statLabel}>2k Counter</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{stats.counter1k}</Text>
+            <Text style={styles.statLabel}>1k Counter</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{stats.bricks}</Text>
+            <Text style={styles.statLabel}>Bricks</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>
+              {stats.averageCost.toFixed(1)}
+            </Text>
+            <Text style={styles.statLabel}>Avg Cost</Text>
+          </View>
+        </View>
+
+        <View style={styles.chart}>
+          {stats.costCurve.map((count, cost) => (
+            <View key={cost} style={styles.barColumn}>
+              <Text style={styles.barCount}>{count || ""}</Text>
+              <View
+                style={[
+                  styles.bar,
+                  { height: Math.max(2, (count / maxCurve) * 80) },
+                  count === 0 && styles.barEmpty,
+                ]}
+              />
+              <Text style={styles.barLabel}>
+                {cost === stats.costCurve.length - 1 ? `${cost}+` : cost}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
       <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
         <Text style={styles.deleteButtonText}>Delete Deck</Text>
       </TouchableOpacity>
@@ -269,6 +315,58 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.text,
       fontSize: typography.sizes.md,
       fontWeight: "bold",
+    },
+    statsCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      padding: spacing.lg,
+      marginTop: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statsTitle: {
+      color: colors.text,
+      fontSize: typography.sizes.xl,
+      fontWeight: "bold",
+      marginBottom: spacing.md,
+      textAlign: "center",
+    },
+    statsRow: { flexDirection: "row", justifyContent: "space-around" },
+    statBox: { alignItems: "center" },
+    statNumber: {
+      color: colors.accent,
+      fontSize: typography.sizes.xxl,
+      fontWeight: "bold",
+    },
+    statLabel: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.xs,
+      textTransform: "uppercase",
+      marginTop: spacing.xs,
+    },
+    chart: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      justifyContent: "space-between",
+      marginTop: spacing.lg,
+      gap: 4,
+    },
+    barColumn: { flex: 1, alignItems: "center", justifyContent: "flex-end" },
+    bar: {
+      width: "100%",
+      backgroundColor: colors.accent,
+      borderRadius: 3,
+    },
+    barEmpty: { backgroundColor: colors.border },
+    barCount: {
+      color: colors.text,
+      fontSize: typography.sizes.xs,
+      height: 16,
+    },
+    barLabel: {
+      color: colors.textMuted,
+      fontSize: typography.sizes.xs,
+      marginTop: spacing.xs,
     },
     deleteButton: {
       borderRadius: radius.md,

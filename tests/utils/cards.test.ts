@@ -1,5 +1,6 @@
 import {
   cardImageUrl,
+  formatCardmarketList,
   getSetLabel,
   isAlternateArt,
   resolveCardImage,
@@ -54,5 +55,20 @@ describe("isAlternateArt", () => {
 
   it("does not flag ids with an unrelated underscore suffix", () => {
     expect(isAlternateArt("OP01-001_r1")).toBe(false);
+  });
+});
+
+describe("formatCardmarketList", () => {
+  it("formats one line per card", () => {
+    expect(
+      formatCardmarketList([
+        { id: "OP17-112", name: "Charlotte Linlin", quantity: 2 },
+        { id: "ST34-004", name: "Charlotte Linlin", quantity: 1 },
+      ]),
+    ).toBe("2x Charlotte Linlin OP17-112\n1x Charlotte Linlin ST34-004");
+  });
+
+  it("returns an empty string for no cards", () => {
+    expect(formatCardmarketList([])).toBe("");
   });
 });

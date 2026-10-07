@@ -59,7 +59,7 @@ export const getDeckCards = (deckId: number): DeckCardWithInfo[] => {
   return db.getAllSync<DeckCardWithInfo>(
     `
     SELECT dc.deck_id, dc.card_id, dc.quantity,
-      c.id, c.name, c.color, c.type, c.cost, c.rarity, c.image_url, c.attribute, c.traits
+      c.id, c.name, c.color, c.type, c.cost, c.rarity, c.image_url, c.attribute, c.traits, c.counter
     FROM deck_cards dc
     JOIN cards c ON c.id = dc.card_id
     WHERE dc.deck_id = ?

@@ -15,3 +15,10 @@ export const getSetLabel = (cardId: string): string => cardId.split("-")[0] ?? "
 // share the same base "SET-NUM" id with a suffix appended.
 export const isAlternateArt = (cardId: string): boolean =>
   /_[pm]\d+$/.test(cardId);
+
+// One "<qty>x <Name> <SET-NUM>" line per card, the format Cardmarket's
+// wants-list importer accepts.
+export const formatCardmarketList = (
+  items: { id: string; name: string; quantity: number }[],
+): string =>
+  items.map((i) => `${i.quantity}x ${i.name} ${i.id}`).join("\n");
