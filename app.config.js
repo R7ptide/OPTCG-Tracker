@@ -4,7 +4,7 @@ export default {
   expo: {
     name: isDev ? "R7-Pose (Dev)" : "R7-Pose",
     slug: "r7-pose",
-    version: "1.3.0",
+    version: "1.5.0",
     orientation: "portrait",
     icon: isDev ? "./assets/images/dev-icon.png" : "./assets/images/icon.png",
     scheme: "r7pose",

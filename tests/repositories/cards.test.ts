@@ -84,12 +84,34 @@ describe("searchCardsByName", () => {
     expect(results.map((c) => c.id).sort()).toEqual(["OP01-001", "OP02-050"]);
   });
 
+  it("lists a whole set by id prefix, case-insensitively, ordered by id", () => {
+    expect(searchCardsByName("op01").map((c) => c.id)).toEqual([
+      "OP01-001",
+      "OP01-002",
+    ]);
+    expect(searchCardsByName("OP01").map((c) => c.id)).toEqual([
+      "OP01-001",
+      "OP01-002",
+    ]);
+  });
+
+  it("finds a single card by full id", () => {
+    expect(searchCardsByName("op02-050").map((c) => c.id)).toEqual([
+      "OP02-050",
+    ]);
+  });
+
   it("returns nothing for a non-matching name", () => {
     expect(searchCardsByName("Nefertari")).toHaveLength(0);
   });
 
-  it("respects the limit parameter", () => {
-    expect(searchCardsByName("o", 1)).toHaveLength(1);
+  it("does not cap the number of results", () => {
+    upsertCards(
+      Array.from({ length: 150 }, (_, i) =>
+        makeCard({ id: `OP09-${String(i).padStart(3, "0")}`, name: "Zzz Bulk" }),
+      ),
+    );
+    expect(searchCardsByName("Zzz Bulk")).toHaveLength(150);
   });
 });
 

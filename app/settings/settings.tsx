@@ -87,7 +87,7 @@ export default function Settings() {
   const handleRestoreFromCloud = () => {
     Alert.alert(
       "Restore from Cloud?",
-      "Restoring will completely overwrite any cards and tournaments currently on this device. Are you sure you want to proceed?",
+      "Restoring will completely overwrite any cards, decks and tournaments currently on this device. Are you sure you want to proceed?",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -111,7 +111,9 @@ export default function Settings() {
   const handleExport = async () => {
     try {
       const payload = buildBackupPayload();
-      if (payload.collection.length === 0 && payload.tournaments.length === 0)
+      if (payload.collection.length === 0 &&
+        payload.tournaments.length === 0 &&
+        !payload.decks?.length)
         return Alert.alert("Empty", "Nothing to export yet!");
 
       const file = new File(Paths.document, "OP_Vault_Backup.json");
@@ -155,7 +157,7 @@ export default function Settings() {
 
       Alert.alert(
         "Warning",
-        "This will OVERWRITE your current collection and tournaments. Are you sure?",
+        "This will OVERWRITE your current collection, decks and tournaments. Are you sure?",
         [
           { text: "Cancel", style: "cancel" },
           {
@@ -376,7 +378,7 @@ export default function Settings() {
         <Text style={styles.sectionLabel}>Advanced Data Options</Text>
 
         <Text style={styles.description}>
-          Export your collection and tournament history to a JSON file, or
+          Export your collection, decks and tournament history to a JSON file, or
           restore from a previous save. Works without a Google account.
         </Text>
 

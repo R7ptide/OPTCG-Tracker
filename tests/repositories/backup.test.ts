@@ -1,6 +1,7 @@
 import db, { initDB } from "../../database";
 import { upsertCards } from "../../repositories/cards";
 import { incrementCard, getAllCollectionRows } from "../../repositories/collection";
+import { createDeck, getDecks, getDeckCards, setDeckCardQuantity } from "../../repositories/decks";
 import { createTournament, addMatch, getTournaments, getMatchesForTournament } from "../../repositories/tournaments";
 import {
   buildBackupPayload,
@@ -31,7 +32,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  db.execSync("DELETE FROM matches; DELETE FROM tournaments; DELETE FROM collection; DELETE FROM cards;");
+  db.execSync("DELETE FROM matches; DELETE FROM tournaments; DELETE FROM collection; DELETE FROM decks; DELETE FROM cards;");
   upsertCards([makeCard({ id: "OP01-001", set_id: "OP01" })]);
 });
 
@@ -64,6 +65,36 @@ describe("buildBackupPayload / restoreBackupPayload", () => {
     expect(getAllCollectionRows()).toHaveLength(1);
     expect(getTournaments()).toHaveLength(1);
     expect(getMatchesForTournament(tournamentId)).toHaveLength(1);
+  });
+});
+
+describe("deck backup", () => {
+  it("round-trips decks and their cards", () => {
+    const deckId = createDeck({ name: "Red Aggro", leaderId: "OP01-001" });
+    setDeckCardQuantity(deckId, "OP01-001", 3);
+    const payload = buildBackupPayload();
+
+    db.execSync("DELETE FROM decks;");
+    expect(getDecks()).toHaveLength(0);
+
+    restoreBackupPayload(payload);
+
+    const decks = getDecks();
+    expect(decks).toHaveLength(1);
+    expect(decks[0].name).toBe("Red Aggro");
+    expect(getDeckCards(deckId).map((c) => c.quantity)).toEqual([3]);
+  });
+
+  it("leaves existing decks alone when restoring a pre-v3 backup", () => {
+    createDeck({ name: "Keep Me" });
+    restoreBackupPayload({
+      version: 2,
+      exportedAt: "",
+      collection: [],
+      tournaments: [],
+      matches: [],
+    });
+    expect(getDecks()).toHaveLength(1);
   });
 });
 

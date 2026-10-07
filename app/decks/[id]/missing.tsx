@@ -1,11 +1,20 @@
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { Image } from "expo-image";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
+import * as Clipboard from "expo-clipboard";
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useMemo, useState } from "react";
 import { getDeckCards, getDeckSummaryById } from "../../../repositories/decks";
 import { getCardById, type MasterCardRow } from "../../../repositories/cards";
 import { getOwnedCountsForBaseIds } from "../../../repositories/collection";
-import { resolveCardImage } from "../../../utils/cards";
+import { formatCardmarketList, resolveCardImage } from "../../../utils/cards";
 import { useSettings } from "../../../contexts/SettingsContext";
 import {
   radius,
@@ -79,8 +88,31 @@ export default function MissingCards() {
     }, [reload]),
   );
 
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(
+      formatCardmarketList(
+        missingCards.map((m) => ({
+          id: m.card.id,
+          name: m.card.name ?? "",
+          quantity: m.missing,
+        })),
+      ),
+    );
+    Alert.alert("Copied", "Missing cards copied for Cardmarket.");
+  };
+
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () =>
+            missingCards.length > 0 ? (
+              <TouchableOpacity onPress={handleCopy} style={styles.headerIcon}>
+                <Ionicons name="copy-outline" size={24} color={colors.text} />
+              </TouchableOpacity>
+            ) : null,
+        }}
+      />
       <FlatList
         data={missingCards}
         keyExtractor={(item) => item.card.id}
@@ -125,6 +157,7 @@ export default function MissingCards() {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
+    headerIcon: { padding: spacing.xs },
     listContent: { padding: spacing.md, paddingBottom: spacing.xxl },
     cardSlot: {
       flex: 1,
