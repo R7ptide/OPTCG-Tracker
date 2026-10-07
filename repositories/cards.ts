@@ -55,15 +55,18 @@ export const getAllLeaders = (): MasterCardRow[] => {
     .filter((card) => !isAlternateArt(card.id));
 };
 
-// Matches against name, attribute (e.g. "Slash"), and traits (e.g. "Straw Hat Crew")
-// so one search bar covers all three without a separate filter control.
+// Matches against name, attribute (e.g. "Slash"), traits (e.g. "Straw Hat Crew")
+// and card id prefix, so "op16" lists a whole set and "op16-003" a single card.
+// SQLite's LIKE is case-insensitive for ASCII, so "OP16" and "op16" both work.
 export const searchCardsByName = (name: string): MasterCardRow[] => {
   const term = `%${name}%`;
+  const idPrefix = `${name}%`;
   return db.getAllSync<MasterCardRow>(
     `SELECT ${MASTER_CARD_COLUMNS} FROM cards
-     WHERE name LIKE ? OR attribute LIKE ? OR traits LIKE ?
-     ORDER BY name ASC`,
-    [term, term, term],
+     WHERE name LIKE ? OR attribute LIKE ? OR traits LIKE ? OR id LIKE ?
+     ORDER BY CASE WHEN id LIKE ? THEN 0 ELSE 1 END,
+              CASE WHEN id LIKE ? THEN id ELSE name END ASC`,
+    [term, term, term, idPrefix, idPrefix, idPrefix],
   );
 };
 

@@ -108,3 +108,56 @@ export const setDeckCardQuantity = (
 export const deleteDeck = (id: number): void => {
   db.runSync("DELETE FROM decks WHERE id = ?", [id]);
 };
+
+export const getAllDeckRows = (): DeckRow[] => {
+  return db.getAllSync<DeckRow>("SELECT * FROM decks");
+};
+
+export const getAllDeckCardRows = (): DeckCardRow[] => {
+  return db.getAllSync<DeckCardRow>("SELECT * FROM deck_cards");
+};
+
+// Replaces all decks from a backup, preserving ids so deck_cards.deck_id stays
+// valid. Deleting decks cascades to deck_cards. Cards missing from the local
+// cards table are skipped, since deck_cards.card_id is a foreign key.
+export const restoreDecks = (
+  decks: DeckRow[],
+  deckCards: DeckCardRow[],
+): void => {
+  db.withTransactionSync(() => {
+    db.runSync("DELETE FROM decks");
+    const deckStmt = db.prepareSync(
+      "INSERT INTO decks (id, name, leader_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+    );
+    const cardStmt = db.prepareSync(
+      `INSERT OR REPLACE INTO deck_cards (deck_id, card_id, quantity)
+       SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM cards WHERE id = ?)`,
+    );
+    try {
+      const deckIds = new Set<number>();
+      decks.forEach((row) => {
+        if (!row.id || !row.name) return;
+        deckIds.add(row.id);
+        deckStmt.executeSync([
+          row.id,
+          row.name,
+          row.leader_id ?? null,
+          row.created_at,
+          row.updated_at,
+        ]);
+      });
+      deckCards.forEach((row) => {
+        if (!deckIds.has(row.deck_id) || !row.card_id || !row.quantity) return;
+        cardStmt.executeSync([
+          row.deck_id,
+          row.card_id,
+          row.quantity,
+          row.card_id,
+        ]);
+      });
+    } finally {
+      deckStmt.finalizeSync();
+      cardStmt.finalizeSync();
+    }
+  });
+};

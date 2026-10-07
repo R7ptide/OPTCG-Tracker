@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../contexts/SettingsContext";
 import {
   radius,
@@ -34,6 +35,7 @@ export default function FormatPicker({
   const { mainSets, extraBoosters } = useGameData();
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredFormats = useMemo(() => {
@@ -64,7 +66,7 @@ export default function FormatPicker({
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
           <Text style={styles.title}>Select Format</Text>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={colors.text} />
@@ -87,7 +89,10 @@ export default function FormatPicker({
           data={filteredFormats}
           keyExtractor={(item) => item}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: insets.bottom + spacing.xxl },
+          ]}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.option}

@@ -84,6 +84,23 @@ describe("searchCardsByName", () => {
     expect(results.map((c) => c.id).sort()).toEqual(["OP01-001", "OP02-050"]);
   });
 
+  it("lists a whole set by id prefix, case-insensitively, ordered by id", () => {
+    expect(searchCardsByName("op01").map((c) => c.id)).toEqual([
+      "OP01-001",
+      "OP01-002",
+    ]);
+    expect(searchCardsByName("OP01").map((c) => c.id)).toEqual([
+      "OP01-001",
+      "OP01-002",
+    ]);
+  });
+
+  it("finds a single card by full id", () => {
+    expect(searchCardsByName("op02-050").map((c) => c.id)).toEqual([
+      "OP02-050",
+    ]);
+  });
+
   it("returns nothing for a non-matching name", () => {
     expect(searchCardsByName("Nefertari")).toHaveLength(0);
   });

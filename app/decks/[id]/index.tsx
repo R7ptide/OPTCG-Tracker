@@ -246,6 +246,10 @@ export default function DeckDetail() {
       {deck && (
         <View style={styles.card}>
           {deck.leader_id ? (
+            <TouchableOpacity
+              disabled={!leaderCard}
+              onPress={() => leaderCard && setSelectedCard(leaderCard)}
+            >
             <Image
               source={{
                 uri: resolveCardImage(deck.leader_id, deck.leaderImageUrl),
@@ -256,6 +260,7 @@ export default function DeckDetail() {
               contentFit="cover"
               cachePolicy="memory-disk"
             />
+            </TouchableOpacity>
           ) : (
             <View style={[styles.leaderThumb, styles.leaderThumbPlaceholder]}>
               <Ionicons
@@ -310,7 +315,7 @@ export default function DeckDetail() {
             <Ionicons name="search" size={18} color={colors.placeholder} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search by name, attribute, trait..."
+              placeholder="Name, trait, set (OP16), card (OP16-003)"
               placeholderTextColor={colors.placeholder}
               value={query}
               onChangeText={setQuery}
@@ -371,6 +376,7 @@ export default function DeckDetail() {
         onIncrement={() => selectedCard && adjustQuantity(selectedCard, 1)}
         onDecrement={() => selectedCard && adjustQuantity(selectedCard, -1)}
         quantityLabel="In Deck"
+        readOnly={selectedCard?.type === "Leader"}
       />
 
       <CardFilterDrawer

@@ -30,6 +30,8 @@ type Props = {
   onIncrement: () => void;
   onDecrement: () => void;
   quantityLabel?: string;
+  // Hides the +/- controls for cards shown for reading only (e.g. a deck's leader).
+  readOnly?: boolean;
 };
 
 export default function CardModal({
@@ -38,6 +40,7 @@ export default function CardModal({
   onIncrement,
   onDecrement,
   quantityLabel = "Owned",
+  readOnly = false,
 }: Props) {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -62,18 +65,26 @@ export default function CardModal({
               contentFit="contain"
               cachePolicy="memory-disk"
             />
-            <View style={styles.controlsContainer}>
-              <TouchableOpacity style={styles.circleBtn} onPress={onDecrement}>
-                <Text style={styles.circleBtnText}>-</Text>
-              </TouchableOpacity>
-              <View style={styles.qtyDisplay}>
-                <Text style={styles.qtyValue}>{card.quantity}</Text>
-                <Text style={styles.qtyLabel}>{quantityLabel}</Text>
+            {!readOnly && (
+              <View style={styles.controlsContainer}>
+                <TouchableOpacity
+                  style={styles.circleBtn}
+                  onPress={onDecrement}
+                >
+                  <Text style={styles.circleBtnText}>-</Text>
+                </TouchableOpacity>
+                <View style={styles.qtyDisplay}>
+                  <Text style={styles.qtyValue}>{card.quantity}</Text>
+                  <Text style={styles.qtyLabel}>{quantityLabel}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.circleBtn}
+                  onPress={onIncrement}
+                >
+                  <Text style={styles.circleBtnText}>+</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.circleBtn} onPress={onIncrement}>
-                <Text style={styles.circleBtnText}>+</Text>
-              </TouchableOpacity>
-            </View>
+            )}
           </View>
         )}
       </View>
