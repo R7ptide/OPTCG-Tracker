@@ -22,3 +22,9 @@ export const formatCardmarketList = (
   items: { id: string; name: string; quantity: number }[],
 ): string =>
   items.map((i) => `${i.quantity}x ${i.name} ${i.id}`).join("\n");
+
+// One "<qty>x<SET-NUM>" line per card, the format the simulator's deck
+// importer accepts.
+export const formatSimList = (
+  items: { id: string; quantity: number }[],
+): string => items.map((i) => `${i.quantity}x${i.id}`).join("\n");

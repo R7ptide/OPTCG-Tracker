@@ -12,6 +12,7 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
+import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import {
   deleteDeck,
@@ -22,7 +23,7 @@ import {
   type DeckWithSummary,
 } from "../../../repositories/decks";
 import { getCardById, type MasterCardRow } from "../../../repositories/cards";
-import { resolveCardImage } from "../../../utils/cards";
+import { formatSimList, resolveCardImage } from "../../../utils/cards";
 import { computeDeckStats } from "../../../utils/deckStats";
 import DeckExportView from "../../../components/DeckExportView";
 import { useSettings } from "../../../contexts/SettingsContext";
@@ -125,6 +126,16 @@ export default function DeckSettings() {
     }
   };
 
+  const handleCopyForSim = async () => {
+    await Clipboard.setStringAsync(
+      formatSimList([
+        ...(leaderCard ? [{ id: leaderCard.id, quantity: 1 }] : []),
+        ...deckCards.map((c) => ({ id: c.card_id, quantity: c.quantity })),
+      ]),
+    );
+    Alert.alert("Copied", "Deck list copied for the simulator.");
+  };
+
   const handleDelete = () => {
     Alert.alert("Delete Deck", "This cannot be undone.", [
       { text: "Cancel", style: "cancel" },
@@ -184,6 +195,12 @@ export default function DeckSettings() {
         ) : (
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         )}
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.row} onPress={handleCopyForSim}>
+        <Ionicons name="copy-outline" size={22} color={colors.text} />
+        <Text style={styles.rowText}>Copy Deck List</Text>
+        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       </TouchableOpacity>
 
       <TouchableOpacity

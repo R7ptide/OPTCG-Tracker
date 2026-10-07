@@ -1,6 +1,7 @@
 import {
   cardImageUrl,
   formatCardmarketList,
+  formatSimList,
   getSetLabel,
   isAlternateArt,
   resolveCardImage,
@@ -70,5 +71,16 @@ describe("formatCardmarketList", () => {
 
   it("returns an empty string for no cards", () => {
     expect(formatCardmarketList([])).toBe("");
+  });
+});
+
+describe("formatSimList", () => {
+  it("formats one <qty>x<id> line per card", () => {
+    expect(
+      formatSimList([
+        { id: "OP01-001", quantity: 1 },
+        { id: "OP16-119", quantity: 2 },
+      ]),
+    ).toBe("1xOP01-001\n2xOP16-119");
   });
 });
