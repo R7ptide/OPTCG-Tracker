@@ -5,14 +5,14 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../components/CardImage";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../../contexts/SettingsContext";
 import { getDecks, type DeckWithSummary } from "../../repositories/decks";
-import { getSetLabel, resolveCardImage } from "../../utils/cards";
+import { getSetLabel } from "../../utils/cards";
 import { DECK_SIZE } from "../../constants/deckRules";
 import {
   radius,
@@ -46,10 +46,9 @@ export default function DeckList() {
             onPress={() => router.push(`/decks/${item.id}`)}
           >
             {item.leader_id ? (
-              <Image
-                source={{
-                  uri: resolveCardImage(item.leader_id, item.leaderImageUrl),
-                }}
+              <CardImage
+                cardId={item.leader_id}
+                fallbackUrl={item.leaderImageUrl}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.leaderThumb}

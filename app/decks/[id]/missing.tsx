@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../../components/CardImage";
 import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,7 +14,7 @@ import { useCallback, useMemo, useState } from "react";
 import { getDeckCards, getDeckSummaryById } from "../../../repositories/decks";
 import { getCardById, type MasterCardRow } from "../../../repositories/cards";
 import { getOwnedCountsForBaseIds } from "../../../repositories/collection";
-import { formatCardmarketList, resolveCardImage } from "../../../utils/cards";
+import { formatCardmarketList } from "../../../utils/cards";
 import { useSettings } from "../../../contexts/SettingsContext";
 import {
   radius,
@@ -120,10 +120,9 @@ export default function MissingCards() {
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <View style={styles.cardSlot}>
-            <Image
-              source={{
-                uri: resolveCardImage(item.card.id, item.card.image_url),
-              }}
+            <CardImage
+              cardId={item.card.id}
+              fallbackUrl={item.card.image_url}
               placeholder={
                 item.card.type === "Leader"
                   ? require("../../../assets/images/leader-card-back.png")

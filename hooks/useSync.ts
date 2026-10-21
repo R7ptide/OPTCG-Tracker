@@ -1,47 +1,76 @@
-import { type CardRow } from "../database";
 import { upsertCards } from "../repositories/cards";
-import { MANUAL_CARDS, type PunkRecordCard } from "../constants/manualCards";
+import { getSetting, setSetting } from "../repositories/settings";
+import {
+  GITHUB_CARDS_URL,
+  SERVER_DOWNLOAD_TIMEOUT_MS,
+  SERVER_TIMEOUT_MS,
+  USE_FALLBACK,
+  serverUrls,
+} from "../constants/server";
+import {
+  isUpdateAvailable,
+  toCardRows,
+  type PunkRecordDict,
+  type ServerVersion,
+} from "../utils/cardSync";
 
-const CARDS_JSON_URL =
-  "https://raw.githubusercontent.com/buhbbl/punk-records/main/english/index/cards_by_id.json";
+const CARDS_COMMIT_KEY = "cardsCommit";
 
-type PunkRecordDict = Record<string, PunkRecordCard>;
+const fetchJson = async <T>(url: string, timeoutMs: number): Promise<T> => {
+  const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+  return response.json();
+};
 
 export const useSync = () => {
+  // Silent on purpose: an unreachable server (e.g. off the tailnet) just
+  // means "nothing to offer", not an error the user needs to see.
+  const checkForUpdate = async (): Promise<boolean> => {
+    try {
+      const version = await fetchJson<ServerVersion>(
+        serverUrls.version,
+        SERVER_TIMEOUT_MS,
+      );
+      return isUpdateAvailable(getSetting(CARDS_COMMIT_KEY), version.commit);
+    } catch {
+      return false;
+    }
+  };
+
   const syncMasterList = async (): Promise<boolean> => {
     try {
-      console.log("Fetching master list from punk-records...");
-      const response = await fetch(CARDS_JSON_URL);
-      const cardsData: PunkRecordDict = await response.json();
+      let cardsData: PunkRecordDict;
+      let commit: string | null = null;
 
-      const manualEntries = Object.entries(MANUAL_CARDS).filter(
-        ([cardId]) => !cardsData[cardId],
-      );
-      const cardEntries = [...Object.entries(cardsData), ...manualEntries];
+      try {
+        console.log("Fetching master list from server...");
+        // Version first: if a build lands mid-download we store the older
+        // commit, so the next launch simply offers the update again.
+        const version = await fetchJson<ServerVersion>(
+          serverUrls.version,
+          SERVER_TIMEOUT_MS,
+        );
+        cardsData = await fetchJson<PunkRecordDict>(
+          serverUrls.cards,
+          SERVER_DOWNLOAD_TIMEOUT_MS,
+        );
+        commit = version.commit;
+      } catch (error) {
+        if (!USE_FALLBACK) throw error;
+        console.warn("Server unreachable, falling back to GitHub:", error);
+        cardsData = await fetchJson<PunkRecordDict>(
+          GITHUB_CARDS_URL,
+          SERVER_DOWNLOAD_TIMEOUT_MS,
+        );
+      }
 
-      console.log(
-        `Downloaded ${cardEntries.length - manualEntries.length} cards from punk-records, ` +
-          `added ${manualEntries.length} manual entries. Updating database...`,
-      );
-
-      const cards: CardRow[] = cardEntries
-        .filter(([cardId]) => !cardId.includes("_r"))
-        .map(([cardId, card]) => ({
-          id: cardId,
-          name: card.name ?? "Unknown",
-          color: card.colors ? card.colors.join("/") : "",
-          type: card.category ?? "",
-          cost: card.cost ?? 0,
-          power: card.power ?? 0,
-          attribute: card.attributes ? card.attributes.join("/") : "",
-          rarity: card.rarity ?? "",
-          image_url: card.img_url ?? "",
-          set_id: cardId.split("-")[0],
-          traits: card.types ? card.types.join("/") : "",
-          counter: card.counter ?? null,
-        }));
-
+      const cards = toCardRows(cardsData);
+      console.log(`Downloaded ${cards.length} cards. Updating database...`);
       upsertCards(cards);
+
+      // Only after the whole upsert succeeded, and never for GitHub data,
+      // whose state doesn't match any server commit.
+      if (commit) setSetting(CARDS_COMMIT_KEY, commit);
 
       console.log("Sync complete!");
       return true;
@@ -51,5 +80,5 @@ export const useSync = () => {
     }
   };
 
-  return { syncMasterList };
+  return { syncMasterList, checkForUpdate };
 };

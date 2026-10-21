@@ -10,7 +10,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../components/CardImage";
 import {
   router,
   Stack,
@@ -45,7 +45,7 @@ import {
   formatDateDisplay,
 } from "../../utils/date";
 import { parsePlacementInput } from "../../utils/placement";
-import { resolveCardImage, getSetLabel } from "../../utils/cards";
+import { getSetLabel } from "../../utils/cards";
 import {
   radius,
   spacing,
@@ -169,10 +169,9 @@ export default function TournamentDetail() {
           <View
             style={[styles.leaderImageWrap, { borderColor: leaderColorHex }]}
           >
-            <Image
-              source={{
-                uri: resolveCardImage(leaderCard.id, leaderCard.image_url),
-              }}
+            <CardImage
+              cardId={leaderCard.id}
+              fallbackUrl={leaderCard.image_url}
               placeholder={require("../../assets/images/leader-card-back.png")}
               transition={200}
               style={styles.leaderImage}
@@ -245,13 +244,9 @@ export default function TournamentDetail() {
                 />
               </View>
             ) : item.opponent ? (
-              <Image
-                source={{
-                  uri: resolveCardImage(
-                    item.opponent.id,
-                    item.opponent.imageUrl,
-                  ),
-                }}
+              <CardImage
+                cardId={item.opponent.id}
+                fallbackUrl={item.opponent.imageUrl}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.opponentThumb}
@@ -630,8 +625,9 @@ function EditTournamentModal({
           >
             {leader ? (
               <>
-                <Image
-                  source={{ uri: resolveCardImage(leader.id, leader.image_url) }}
+                <CardImage
+                  cardId={leader.id}
+                  fallbackUrl={leader.image_url}
                   placeholder={require("../../assets/images/leader-card-back.png")}
                   transition={200}
                   style={styles.leaderThumbSmall}
@@ -808,13 +804,9 @@ function MatchModal({
               >
                 {opponent ? (
                   <>
-                    <Image
-                      source={{
-                        uri: resolveCardImage(
-                          opponent.id,
-                          opponent.image_url,
-                        ),
-                      }}
+                    <CardImage
+                      cardId={opponent.id}
+                      fallbackUrl={opponent.image_url}
                       placeholder={require("../../assets/images/leader-card-back.png")}
                       transition={200}
                       style={styles.leaderThumbSmall}

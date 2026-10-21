@@ -7,7 +7,7 @@ import {
   Alert,
   Platform,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../components/CardImage";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,7 +20,6 @@ import { type MasterCardRow } from "../../repositories/cards";
 import LeaderPicker from "../../components/LeaderPicker";
 import FormatPicker from "../../components/FormatPicker";
 import { toDateString, formatDateDisplay } from "../../utils/date";
-import { resolveCardImage } from "../../utils/cards";
 import { parsePlacementInput } from "../../utils/placement";
 import {
   radius,
@@ -144,8 +143,9 @@ export default function NewTournament() {
         >
           {leader ? (
             <>
-              <Image
-                source={{ uri: resolveCardImage(leader.id, leader.image_url) }}
+              <CardImage
+                cardId={leader.id}
+                fallbackUrl={leader.image_url}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.leaderThumb}

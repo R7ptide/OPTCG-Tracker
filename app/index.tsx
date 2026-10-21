@@ -9,7 +9,7 @@ import {
 import { Image } from "expo-image";
 import { router, Stack, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useSync } from "../hooks/useSync";
 import {
   getCollectionStats,
@@ -45,7 +45,7 @@ const readHasCards = (): boolean => {
 export default function Home() {
   const { colors } = useSettings();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { syncMasterList } = useSync();
+  const { syncMasterList, checkForUpdate } = useSync();
   const [isSyncing, setIsSyncing] = useState(false);
   const [stats, setStats] = useState<Stats>(readStats);
   const [hasCards, setHasCards] = useState(readHasCards);
@@ -68,6 +68,26 @@ export default function Home() {
       Alert.alert("Error", "Failed to sync. Check connection.");
     }
   };
+
+  // Once per launch. A fresh install has no cards, so the empty state's
+  // "Sync Now" button already covers it and we don't stack a prompt on top.
+  useEffect(() => {
+    let cancelled = false;
+    const promptIfOutdated = async () => {
+      if (!readHasCards()) return;
+      const updateAvailable = await checkForUpdate();
+      if (cancelled || !updateAvailable) return;
+      Alert.alert("Cards updated", "New card data is available. Sync now?", [
+        { text: "Later", style: "cancel" },
+        { text: "Sync", onPress: handleSync },
+      ]);
+    };
+    promptIfOutdated();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <View style={styles.container}>
