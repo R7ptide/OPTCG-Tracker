@@ -7,7 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "./CardImage";
 import { useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,7 +19,6 @@ import {
   type ThemeColors,
 } from "../constants/theme";
 import { useSettings } from "../contexts/SettingsContext";
-import { resolveCardImage } from "../utils/cards";
 
 type Props = {
   visible: boolean;
@@ -92,8 +91,9 @@ export default function LeaderPicker({ visible, onClose, onSelect }: Props) {
               style={styles.cardSlot}
               onPress={() => handleSelect(item)}
             >
-              <Image
-                source={{ uri: resolveCardImage(item.id, item.image_url) }}
+              <CardImage
+                cardId={item.id}
+                fallbackUrl={item.image_url}
                 placeholder={require("../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.cardImage}

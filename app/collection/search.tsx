@@ -5,7 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../components/CardImage";
 import { FlashList } from "@shopify/flash-list";
 import { useEffect, useMemo, useState } from "react";
 import { Stack } from "expo-router";
@@ -119,8 +119,9 @@ export default function CardSearch() {
               style={styles.cardSlot}
               onPress={() => setSelectedCard(item)}
             >
-              <Image
-                source={{ uri: item.imageUrl }}
+              <CardImage
+                cardId={item.id}
+                fallbackUrl={item.imageUrl}
                 recyclingKey={item.id}
                 placeholder={
                   item.type === "Leader"

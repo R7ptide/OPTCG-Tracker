@@ -6,7 +6,7 @@ import {
   FlatList,
   StyleSheet,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../../components/CardImage";
 import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -205,8 +205,9 @@ export default function DeckDetail() {
       style={styles.cardSlot}
       onPress={() => setSelectedCard(card)}
     >
-      <Image
-        source={{ uri: resolveCardImage(card.id, card.image_url) }}
+      <CardImage
+        cardId={card.id}
+        fallbackUrl={card.image_url}
         placeholder={
           card.type === "Leader"
             ? require("../../../assets/images/leader-card-back.png")
@@ -250,10 +251,9 @@ export default function DeckDetail() {
               disabled={!leaderCard}
               onPress={() => leaderCard && setSelectedCard(leaderCard)}
             >
-            <Image
-              source={{
-                uri: resolveCardImage(deck.leader_id, deck.leaderImageUrl),
-              }}
+            <CardImage
+              cardId={deck.leader_id}
+              fallbackUrl={deck.leaderImageUrl}
               placeholder={require("../../../assets/images/leader-card-back.png")}
               transition={200}
               style={styles.leaderThumb}

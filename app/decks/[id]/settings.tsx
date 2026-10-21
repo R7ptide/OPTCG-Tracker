@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { Image } from "expo-image";
+import { prefetchCardImage } from "../../../components/CardImage";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { captureRef } from "react-native-view-shot";
@@ -23,7 +23,7 @@ import {
   type DeckWithSummary,
 } from "../../../repositories/decks";
 import { getCardById, type MasterCardRow } from "../../../repositories/cards";
-import { formatSimList, resolveCardImage } from "../../../utils/cards";
+import { formatSimList } from "../../../utils/cards";
 import { computeDeckStats } from "../../../utils/deckStats";
 import DeckExportView from "../../../components/DeckExportView";
 import { useSettings } from "../../../contexts/SettingsContext";
@@ -100,12 +100,12 @@ export default function DeckSettings() {
     if (!deck || isExporting) return;
     setIsExporting(true);
     try {
-      const urls = [
-        leaderCard && resolveCardImage(leaderCard.id, leaderCard.image_url),
-        ...deckCards.map((c) => resolveCardImage(c.card_id, c.image_url)),
-      ].filter((u): u is string => !!u);
+      const cards = [
+        leaderCard && { id: leaderCard.id, imageUrl: leaderCard.image_url },
+        ...deckCards.map((c) => ({ id: c.card_id, imageUrl: c.image_url })),
+      ].filter((c): c is { id: string; imageUrl: string | null } => !!c);
 
-      await Promise.all(urls.map((u) => Image.prefetch(u).catch(() => {})));
+      await Promise.all(cards.map((c) => prefetchCardImage(c.id, c.imageUrl)));
       // Let the off-screen view settle one frame after the images resolve
       // from cache before the capture reads its pixels.
       await new Promise((resolve) => setTimeout(resolve, 300));

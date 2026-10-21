@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "./CardImage";
 import { useMemo } from "react";
 import {
   radius,
@@ -53,8 +53,9 @@ export default function CardModal({
             <Text style={styles.cardTitle} numberOfLines={2}>
               {card.name} ({card.id})
             </Text>
-            <Image
-              source={{ uri: card.imageUrl }}
+            <CardImage
+              cardId={card.id}
+              fallbackUrl={card.imageUrl}
               placeholder={
                 card.type === "Leader"
                   ? require("../assets/images/leader-card-back.png")

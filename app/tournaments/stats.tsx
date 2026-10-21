@@ -5,7 +5,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../components/CardImage";
 import { useState, useMemo, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 //import { Ionicons } from "@expo/vector-icons";
@@ -23,7 +23,7 @@ import {
 } from "../../repositories/tournaments";
 import { type MatchRow } from "../../database";
 import { getCardById } from "../../repositories/cards";
-import { resolveCardImage, getSetLabel } from "../../utils/cards";
+import { getSetLabel } from "../../utils/cards";
 import { useAvailableFormats } from "../../hooks/useAvailableFormats";
 
 type Tab = "over" | "match";
@@ -441,13 +441,9 @@ export default function StatisticsMenu() {
                           { backgroundColor: podiumBackgrounds[index] },
                         ]}
                       >
-                        <Image
-                          source={{
-                            uri: resolveCardImage(
-                              deck.leaderId,
-                              deck.leaderImageUrl,
-                            ),
-                          }}
+                        <CardImage
+                          cardId={deck.leaderId}
+                          fallbackUrl={deck.leaderImageUrl}
                           placeholder={require("../../assets/images/leader-card-back.png")}
                           transition={200}
                           style={styles.deckImage}
@@ -525,10 +521,9 @@ export default function StatisticsMenu() {
                           : styles.leaderFilterCardUnselected,
                       ]}
                     >
-                      <Image
-                        source={{
-                          uri: resolveCardImage(leader.id, leader.imageUrl),
-                        }}
+                      <CardImage
+                        cardId={leader.id}
+                        fallbackUrl={leader.imageUrl}
                         placeholder={require("../../assets/images/leader-card-back.png")}
                         transition={200}
                         style={styles.leaderFilterImage}
@@ -685,10 +680,9 @@ export default function StatisticsMenu() {
                   style={styles.matchupRowCard}
                 >
                   <View style={styles.matchupLeft}>
-                    <Image
-                      source={{
-                        uri: resolveCardImage(opp.oppId, opp.oppImageUrl),
-                      }}
+                    <CardImage
+                      cardId={opp.oppId}
+                      fallbackUrl={opp.oppImageUrl}
                       placeholder={require("../../assets/images/leader-card-back.png")}
                       transition={200}
                       style={styles.matchupImage}

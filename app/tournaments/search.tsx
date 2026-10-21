@@ -6,7 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../components/CardImage";
 import { useEffect, useMemo, useState } from "react";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +18,6 @@ import {
   type ThemeColors,
 } from "../../constants/theme";
 import { formatDateDisplay } from "../../utils/date";
-import { resolveCardImage } from "../../utils/cards";
 import { useSettings } from "../../contexts/SettingsContext";
 
 export default function TournamentSearch() {
@@ -74,10 +73,9 @@ export default function TournamentSearch() {
             onPress={() => router.push(`/tournaments/${item.id}`)}
           >
             {item.leader_id ? (
-              <Image
-                source={{
-                  uri: resolveCardImage(item.leader_id, item.leaderImageUrl),
-                }}
+              <CardImage
+                cardId={item.leader_id}
+                fallbackUrl={item.leaderImageUrl}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.leaderThumb}

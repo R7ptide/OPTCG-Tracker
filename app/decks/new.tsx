@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../components/CardImage";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,7 +14,6 @@ import { useSettings } from "../../contexts/SettingsContext";
 import { createDeck } from "../../repositories/decks";
 import { type MasterCardRow } from "../../repositories/cards";
 import LeaderPicker from "../../components/LeaderPicker";
-import { resolveCardImage } from "../../utils/cards";
 import {
   radius,
   spacing,
@@ -63,8 +62,9 @@ export default function NewDeck() {
         >
           {leader ? (
             <>
-              <Image
-                source={{ uri: resolveCardImage(leader.id, leader.image_url) }}
+              <CardImage
+                cardId={leader.id}
+                fallbackUrl={leader.image_url}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.leaderThumb}

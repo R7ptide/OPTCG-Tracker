@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import { Image } from "expo-image";
+import CardImage from "../../components/CardImage";
 import { router, useFocusEffect, Stack } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,7 +17,6 @@ import {
   type TournamentWithRecord,
 } from "../../repositories/tournaments";
 import { formatDateDisplay } from "../../utils/date";
-import { resolveCardImage } from "../../utils/cards";
 import { useAvailableFormats } from "../../hooks/useAvailableFormats";
 import {
   radius,
@@ -109,10 +108,9 @@ export default function TournamentList() {
             onPress={() => router.push(`/tournaments/${item.id}`)}
           >
             {item.leader_id ? (
-              <Image
-                source={{
-                  uri: resolveCardImage(item.leader_id, item.leaderImageUrl),
-                }}
+              <CardImage
+                cardId={item.leader_id}
+                fallbackUrl={item.leaderImageUrl}
                 placeholder={require("../../assets/images/leader-card-back.png")}
                 transition={200}
                 style={styles.leaderThumb}

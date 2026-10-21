@@ -1,4 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  GITHUB_PACKS_URL,
+  SERVER_TIMEOUT_MS,
+  USE_FALLBACK,
+  serverUrls,
+} from "./server";
+import { parseSets, type GameDataSets, type PacksJson } from "../utils/sets";
+
+const GAME_DATA_CACHE_KEY = "@game_data_sets";
 
 const range = (count: number, prefix: string): string[] =>
   Array.from(
@@ -6,25 +15,52 @@ const range = (count: number, prefix: string): string[] =>
     (_, i) => `${prefix}${String(i + 1).padStart(2, "0")}`,
   );
 
-export const fetchGameData = async () => {
+// Last-resort lists for a first launch with no server and no cache.
+const DEFAULT_SETS: GameDataSets = {
+  mainSets: range(17, "OP"),
+  extraBoosters: range(4, "EB"),
+  starterDecks: range(36, "ST"),
+  premiumBoosters: range(2, "PRB"),
+};
+
+const EMPTY_SETS: GameDataSets = {
+  mainSets: [],
+  extraBoosters: [],
+  starterDecks: [],
+  premiumBoosters: [],
+};
+
+const fetchPacks = async (url: string): Promise<PacksJson> => {
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(SERVER_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+  return response.json();
+};
+
+export const fetchGameData = async (): Promise<GameDataSets> => {
   try {
-    const url = `http://api.100.95.187.118.nip.io/expansions`;
-    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    const data = await response.json();
-
-    await AsyncStorage.setItem("@game_data", JSON.stringify(data));
-    return data;
+    return await loadSets(serverUrls.packs);
   } catch (error) {
-    const cachedData = await AsyncStorage.getItem("@game_data");
-    if (cachedData) return JSON.parse(cachedData);
-
-    return {
-      mainSetCount: 17,
-      extraBoosterCount: 4,
-      starterDeckCount: 36,
-      premiumBoostersCount: 2,
-    };
+    // Without the fallback, surface the failure instead of masking it.
+    if (!USE_FALLBACK) {
+      console.error("Failed to load sets from server:", error);
+      return EMPTY_SETS;
+    }
   }
+
+  try {
+    return await loadSets(GITHUB_PACKS_URL);
+  } catch {
+    const cached = await AsyncStorage.getItem(GAME_DATA_CACHE_KEY);
+    return cached ? JSON.parse(cached) : DEFAULT_SETS;
+  }
+};
+
+const loadSets = async (url: string): Promise<GameDataSets> => {
+  const sets = parseSets(await fetchPacks(url));
+  await AsyncStorage.setItem(GAME_DATA_CACHE_KEY, JSON.stringify(sets));
+  return sets;
 };
 
 export type FilterKey = "colors" | "types" | "rarities";

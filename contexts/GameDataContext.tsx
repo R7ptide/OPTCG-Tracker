@@ -1,12 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { fetchGameData } from "../constants/gameData";
-
-type GameDataSets = {
-  mainSets: string[];
-  extraBoosters: string[];
-  starterDecks: string[];
-  premiumBoosters: string[];
-};
+import { type GameDataSets } from "../utils/sets";
 
 type GameDataContextType = GameDataSets & {
   isLoading: boolean;
@@ -29,20 +23,7 @@ export const GameDataProvider = ({
 
   useEffect(() => {
     const loadData = async () => {
-      const remoteData = await fetchGameData();
-
-      const range = (count: number, prefix: string) =>
-        Array.from(
-          { length: count },
-          (_, i) => `${prefix}${String(i + 1).padStart(2, "0")}`,
-        );
-
-      setData({
-        mainSets: range(remoteData.mainSetCount ?? 16, "OP"),
-        extraBoosters: range(remoteData.extraBoosterCount ?? 4, "EB"),
-        starterDecks: range(remoteData.starterDeckCount ?? 30, "ST"),
-        premiumBoosters: range(remoteData.premiumBoostersCount ?? 2, "PRB"),
-      });
+      setData(await fetchGameData());
       setIsLoading(false);
     };
 

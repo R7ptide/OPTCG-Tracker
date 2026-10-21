@@ -1,7 +1,6 @@
 import { forwardRef } from "react";
 import { View, Text, StyleSheet, Image as RNImage } from "react-native";
-import { Image } from "expo-image";
-import { resolveCardImage } from "../utils/cards";
+import CardImage from "./CardImage";
 import { radius, type ThemeColors } from "../constants/theme";
 
 export type ExportCard = {
@@ -50,8 +49,9 @@ const DeckExportView = forwardRef<View, Props>(
         <View style={styles.grid}>
           {cards.map((card) => (
             <View key={card.id} style={styles.cardSlot}>
-              <Image
-                source={{ uri: resolveCardImage(card.id, card.imageUrl) }}
+              <CardImage
+                cardId={card.id}
+                fallbackUrl={card.imageUrl}
                 style={styles.cardImage}
                 contentFit="contain"
               />
