@@ -8,7 +8,7 @@ import {
   typography,
   type ThemeColors,
 } from "../../constants/theme";
-import { CHANGELOG_TEXT } from "../../constants/changelog";
+import { CHANGELOG, ROADMAP, splitReleases } from "../../constants/changelog";
 
 export default function WhatsNewScreen() {
   const { colors } = useSettings();
@@ -16,24 +16,10 @@ export default function WhatsNewScreen() {
 
   const appVersion = Constants.expoConfig?.version || "1.0.0";
 
-  const parsedData = useMemo(() => {
-    const blocks = CHANGELOG_TEXT.trim().split(/\n\s*\n/);
-    const newBlock = blocks[0] || "";
-    const nextBlock = blocks[1] || "";
-
-    const parseLines = (block: string) => {
-      return block
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.startsWith("-"))
-        .map((line) => line.substring(1).trim());
-    };
-
-    return {
-      whatsNew: parseLines(newBlock),
-      whatsNext: parseLines(nextBlock),
-    };
-  }, []);
+  const { current, previous } = useMemo(
+    () => splitReleases(appVersion, CHANGELOG),
+    [appVersion],
+  );
 
   const renderFeatureRow = (
     itemText: string,
@@ -69,21 +55,36 @@ export default function WhatsNewScreen() {
         </View>
       </View>
 
-      {parsedData.whatsNew.length > 0 && (
+      {current && current.items.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recently Added</Text>
-          {parsedData.whatsNew.map((item, index) =>
+          {current.items.map((item, index) =>
             renderFeatureRow(item, index, false),
           )}
         </View>
       )}
 
-      {parsedData.whatsNext.length > 0 && (
+      {ROADMAP.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{"What's Next"}</Text>
-          {parsedData.whatsNext.map((item, index) =>
-            renderFeatureRow(item, index, true),
-          )}
+          {ROADMAP.map((item, index) => renderFeatureRow(item, index, true))}
+        </View>
+      )}
+
+      {previous.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Previous Versions</Text>
+          {previous.map((release) => (
+            <View key={release.version} style={styles.section}>
+              <View style={styles.releaseHeader}>
+                <Text style={styles.releaseVersion}>v{release.version}</Text>
+                <Text style={styles.releaseDate}>{release.date}</Text>
+              </View>
+              {release.items.map((item, index) =>
+                renderFeatureRow(item, index, false),
+              )}
+            </View>
+          ))}
         </View>
       )}
     </ScrollView>
@@ -122,6 +123,21 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1,
+    },
+    releaseHeader: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      justifyContent: "space-between",
+      marginTop: spacing.sm,
+    },
+    releaseVersion: {
+      fontSize: typography.sizes.xl,
+      fontWeight: "bold",
+      color: colors.text,
+    },
+    releaseDate: {
+      fontSize: typography.sizes.sm,
+      color: colors.textMuted,
     },
     textContainer: { flex: 1 },
     featureCard: {

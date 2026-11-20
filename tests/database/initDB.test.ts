@@ -23,6 +23,23 @@ describe("initDB", () => {
     ]);
   });
 
+  it("adds the card detail columns", () => {
+    initDB();
+
+    const columns = db
+      .getAllSync<{ name: string }>("PRAGMA table_info(cards)")
+      .map((c) => c.name);
+
+    expect(columns).toEqual(
+      expect.arrayContaining([
+        "pack_id",
+        "effect",
+        "trigger_text",
+        "block_number",
+      ]),
+    );
+  });
+
   it("is idempotent — safe to run multiple times", () => {
     expect(() => {
       initDB();

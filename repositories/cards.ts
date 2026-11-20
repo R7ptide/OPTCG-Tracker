@@ -28,10 +28,15 @@ export type MasterCardRow = Pick<
   | "attribute"
   | "traits"
   | "counter"
+  | "power"
+  | "pack_id"
+  | "effect"
+  | "trigger_text"
+  | "block_number"
 >;
 
-const MASTER_CARD_COLUMNS =
-  "id, name, color, type, cost, rarity, image_url, attribute, traits, counter";
+export const MASTER_CARD_COLUMNS =
+  "id, name, color, type, cost, rarity, image_url, attribute, traits, counter, power, pack_id, effect, trigger_text, block_number";
 
 export const getCardsForSet = (setId: string): MasterCardRow[] => {
   return db.getAllSync<MasterCardRow>(
@@ -85,12 +90,30 @@ export const getCardsByColors = (colors: string[]): MasterCardRow[] => {
   );
 };
 
+// An upsert (not INSERT OR REPLACE) so a null effect/trigger/block, meaning
+// "this pack wasn't synced", keeps the text already stored for the card.
 export const upsertCards = (cards: CardRow[]): void => {
   db.withTransactionSync(() => {
     const insertStmt = db.prepareSync(`
-      INSERT OR REPLACE INTO cards
-      (id, name, color, type, cost, power, attribute, rarity, image_url, set_id, traits, counter)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO cards
+      (id, name, color, type, cost, power, attribute, rarity, image_url, set_id, traits, counter, pack_id, effect, trigger_text, block_number)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        color = excluded.color,
+        type = excluded.type,
+        cost = excluded.cost,
+        power = excluded.power,
+        attribute = excluded.attribute,
+        rarity = excluded.rarity,
+        image_url = excluded.image_url,
+        set_id = excluded.set_id,
+        traits = excluded.traits,
+        counter = excluded.counter,
+        pack_id = excluded.pack_id,
+        effect = COALESCE(excluded.effect, cards.effect),
+        trigger_text = COALESCE(excluded.trigger_text, cards.trigger_text),
+        block_number = COALESCE(excluded.block_number, cards.block_number)
     `);
 
     try {
@@ -108,6 +131,10 @@ export const upsertCards = (cards: CardRow[]): void => {
           card.set_id,
           card.traits,
           card.counter,
+          card.pack_id,
+          card.effect,
+          card.trigger_text,
+          card.block_number,
         ]);
       }
     } finally {
