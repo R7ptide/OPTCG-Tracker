@@ -24,6 +24,10 @@ const makeCard = (overrides: Partial<CardRow> & { id: string }): CardRow => ({
   set_id: null,
   traits: null,
   counter: null,
+  pack_id: null,
+  effect: null,
+  trigger_text: null,
+  block_number: null,
   ...overrides,
 });
 

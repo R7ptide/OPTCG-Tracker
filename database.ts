@@ -15,6 +15,12 @@ export type CardRow = {
   set_id: string | null;
   traits: string | null;
   counter: number | null;
+  pack_id: string | null;
+  // "" means the pack was synced and the card has no text; null means the
+  // text was never synced (or its pack failed) so the stored value is kept.
+  effect: string | null;
+  trigger_text: string | null;
+  block_number: number | null;
 };
 
 export type CollectionRow = {
@@ -176,6 +182,21 @@ const MIGRATIONS: Migration[] = [
     if (!hasColumn(db, "cards", "counter")) {
       db.execSync(`ALTER TABLE cards ADD COLUMN counter INTEGER;`);
     }
+  },
+  (db) => {
+    for (const [column, type] of [
+      ["pack_id", "TEXT"],
+      ["effect", "TEXT"],
+      ["trigger_text", "TEXT"],
+      ["block_number", "INTEGER"],
+    ] as const) {
+      if (!hasColumn(db, "cards", column)) {
+        db.execSync(`ALTER TABLE cards ADD COLUMN ${column} ${type};`);
+      }
+    }
+    // Existing installs have no effect text yet. Dropping the stored commit
+    // makes the next launch offer a sync that fills it in.
+    db.execSync(`DELETE FROM settings WHERE key = 'cardsCommit';`);
   },
 ];
 

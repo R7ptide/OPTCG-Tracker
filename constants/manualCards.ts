@@ -20,6 +20,11 @@ export type PunkRecordCard = {
   types?: string[];
   keywords?: string[];
   pack_id?: string;
+  // Per-pack data (english/data/<pack_id>.json). Fill these in for manual
+  // entries: they take precedence over whatever the pack file says.
+  effect?: string | null;
+  trigger?: string | null;
+  block_number?: number | null;
 };
 
 export const MANUAL_CARDS: Record<string, PunkRecordCard> = {

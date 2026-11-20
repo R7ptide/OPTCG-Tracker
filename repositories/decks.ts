@@ -1,5 +1,5 @@
 import db, { type DeckCardRow, type DeckRow } from "../database";
-import { type MasterCardRow } from "./cards";
+import { MASTER_CARD_COLUMNS, type MasterCardRow } from "./cards";
 
 export type NewDeck = {
   name: string;
@@ -58,8 +58,9 @@ export type DeckCardWithInfo = DeckCardRow & MasterCardRow;
 export const getDeckCards = (deckId: number): DeckCardWithInfo[] => {
   return db.getAllSync<DeckCardWithInfo>(
     `
-    SELECT dc.deck_id, dc.card_id, dc.quantity,
-      c.id, c.name, c.color, c.type, c.cost, c.rarity, c.image_url, c.attribute, c.traits, c.counter
+    SELECT dc.deck_id, dc.card_id, dc.quantity, ${MASTER_CARD_COLUMNS.split(", ")
+      .map((column) => `c.${column}`)
+      .join(", ")}
     FROM deck_cards dc
     JOIN cards c ON c.id = dc.card_id
     WHERE dc.deck_id = ?

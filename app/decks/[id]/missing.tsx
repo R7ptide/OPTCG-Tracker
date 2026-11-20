@@ -44,18 +44,7 @@ export default function MissingCards() {
 
     const needed: { card: MasterCardRow; quantity: number }[] = deckCards.map(
       (c) => ({
-        card: {
-          id: c.id,
-          name: c.name,
-          color: c.color,
-          type: c.type,
-          cost: c.cost,
-          rarity: c.rarity,
-          image_url: c.image_url,
-          attribute: c.attribute,
-          traits: c.traits,
-          counter: c.counter,
-        },
+        card: c,
         quantity: c.quantity,
       }),
     );

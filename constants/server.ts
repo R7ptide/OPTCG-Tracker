@@ -21,10 +21,15 @@ export const GITHUB_CARDS_URL =
 export const GITHUB_PACKS_URL =
   "https://raw.githubusercontent.com/buhbbl/punk-records/main/english/packs.json";
 
+export const githubPackDataUrl = (packId: string): string =>
+  `https://raw.githubusercontent.com/buhbbl/punk-records/main/english/data/${packId}.json`;
+
 export const serverUrls = {
   version: `${SERVER_BASE_URL}/version.json`,
   cards: `${SERVER_BASE_URL}/english/index/cards_by_id.json`,
   packs: `${SERVER_BASE_URL}/english/packs.json`,
+  data: (packId: string): string =>
+    `${SERVER_BASE_URL}/english/data/${packId}.json`,
   image: (cardId: string): string =>
     `${SERVER_BASE_URL}/english/images/${cardId}.png`,
 };

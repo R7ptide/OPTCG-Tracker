@@ -7,7 +7,12 @@ import {
   StyleSheet,
 } from "react-native";
 import CardImage from "../../../components/CardImage";
-import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
+import {
+  router,
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+} from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../../../contexts/SettingsContext";
@@ -84,7 +89,8 @@ const byTypeThenCost = (
   b: { type?: string | null; cost?: number | null },
 ): number => {
   const typeDiff =
-    (TYPE_SORT_ORDER[a.type ?? ""] ?? 99) - (TYPE_SORT_ORDER[b.type ?? ""] ?? 99);
+    (TYPE_SORT_ORDER[a.type ?? ""] ?? 99) -
+    (TYPE_SORT_ORDER[b.type ?? ""] ?? 99);
   if (typeDiff !== 0) return typeDiff;
   return (a.cost ?? 0) - (b.cost ?? 0);
 };
@@ -192,6 +198,11 @@ export default function DeckDetail() {
       attribute: selectedCard.attribute ?? "",
       traits: selectedCard.traits ?? "",
       cost: selectedCard.cost,
+      power: selectedCard.power,
+      counter: selectedCard.counter,
+      effect: selectedCard.effect ?? "",
+      trigger: selectedCard.trigger_text ?? "",
+      blockNumber: selectedCard.block_number,
       imageUrl: resolveCardImage(selectedCard.id, selectedCard.image_url),
       owned: true,
       quantity: quantities[selectedCard.id] ?? 0,
@@ -251,15 +262,15 @@ export default function DeckDetail() {
               disabled={!leaderCard}
               onPress={() => leaderCard && setSelectedCard(leaderCard)}
             >
-            <CardImage
-              cardId={deck.leader_id}
-              fallbackUrl={deck.leaderImageUrl}
-              placeholder={require("../../../assets/images/leader-card-back.png")}
-              transition={200}
-              style={styles.leaderThumb}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-            />
+              <CardImage
+                cardId={deck.leader_id}
+                fallbackUrl={deck.leaderImageUrl}
+                placeholder={require("../../../assets/images/leader-card-back.png")}
+                transition={200}
+                style={styles.leaderThumb}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
             </TouchableOpacity>
           ) : (
             <View style={[styles.leaderThumb, styles.leaderThumbPlaceholder]}>

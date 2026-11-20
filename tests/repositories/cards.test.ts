@@ -23,6 +23,10 @@ const makeCard = (overrides: Partial<CardRow> & { id: string }): CardRow => ({
   set_id: null,
   traits: null,
   counter: null,
+  pack_id: null,
+  effect: null,
+  trigger_text: null,
+  block_number: null,
   ...overrides,
 });
 
@@ -36,16 +40,86 @@ beforeEach(() => {
 
 describe("upsertCards", () => {
   it("inserts new cards", () => {
-    upsertCards([makeCard({ id: "OP01-001", name: "Monkey D. Luffy", set_id: "OP01" })]);
+    upsertCards([
+      makeCard({ id: "OP01-001", name: "Monkey D. Luffy", set_id: "OP01" }),
+    ]);
     expect(getTotalCardCount()).toBe(1);
   });
 
   it("replaces existing card data instead of duplicating rows", () => {
-    upsertCards([makeCard({ id: "OP01-001", name: "Old Name", set_id: "OP01" })]);
-    upsertCards([makeCard({ id: "OP01-001", name: "New Name", set_id: "OP01" })]);
+    upsertCards([
+      makeCard({ id: "OP01-001", name: "Old Name", set_id: "OP01" }),
+    ]);
+    upsertCards([
+      makeCard({ id: "OP01-001", name: "New Name", set_id: "OP01" }),
+    ]);
 
     expect(getTotalCardCount()).toBe(1);
     expect(getCardsForSet("OP01")[0].name).toBe("New Name");
+  });
+
+  it("stores effect, trigger, block and pack", () => {
+    upsertCards([
+      makeCard({
+        id: "OP01-001",
+        set_id: "OP01",
+        pack_id: "569101",
+        effect: "Draw 1.",
+        trigger_text: "Play this card.",
+        block_number: 1,
+      }),
+    ]);
+
+    expect(getCardsForSet("OP01")[0]).toMatchObject({
+      pack_id: "569101",
+      effect: "Draw 1.",
+      trigger_text: "Play this card.",
+      block_number: 1,
+    });
+  });
+
+  it("keeps stored text when a later sync has none for the card (pack failed)", () => {
+    upsertCards([
+      makeCard({
+        id: "OP01-001",
+        set_id: "OP01",
+        effect: "Draw 1.",
+        trigger_text: "Trig",
+        block_number: 1,
+      }),
+    ]);
+    upsertCards([
+      makeCard({ id: "OP01-001", name: "Renamed", set_id: "OP01" }),
+    ]);
+
+    expect(getCardsForSet("OP01")[0]).toMatchObject({
+      name: "Renamed",
+      effect: "Draw 1.",
+      trigger_text: "Trig",
+      block_number: 1,
+    });
+  });
+
+  it("overwrites stored text with an empty string from a synced pack", () => {
+    upsertCards([makeCard({ id: "OP01-001", set_id: "OP01", effect: "Old" })]);
+    upsertCards([makeCard({ id: "OP01-001", set_id: "OP01", effect: "" })]);
+
+    expect(getCardsForSet("OP01")[0].effect).toBe("");
+  });
+
+  it("keeps collection rows when a card is upserted again", () => {
+    upsertCards([makeCard({ id: "OP01-001", set_id: "OP01" })]);
+    db.runSync("INSERT INTO collection (card_id, quantity) VALUES (?, ?)", [
+      "OP01-001",
+      3,
+    ]);
+    upsertCards([makeCard({ id: "OP01-001", name: "New", set_id: "OP01" })]);
+
+    expect(
+      db.getFirstSync<{ quantity: number }>(
+        "SELECT quantity FROM collection WHERE card_id = 'OP01-001'",
+      )?.quantity,
+    ).toBe(3);
   });
 });
 
@@ -108,7 +182,10 @@ describe("searchCardsByName", () => {
   it("does not cap the number of results", () => {
     upsertCards(
       Array.from({ length: 150 }, (_, i) =>
-        makeCard({ id: `OP09-${String(i).padStart(3, "0")}`, name: "Zzz Bulk" }),
+        makeCard({
+          id: `OP09-${String(i).padStart(3, "0")}`,
+          name: "Zzz Bulk",
+        }),
       ),
     );
     expect(searchCardsByName("Zzz Bulk")).toHaveLength(150);
